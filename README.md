@@ -40,7 +40,7 @@ Users can access the client UI to interact with the blockchain. The API gateway 
 
 - **Blockchain Miner Nodes (Golang APIs):** The backbone of the blockchain is formed by three Golang APIs that function as blockchain miner nodes. These nodes are responsible for performing mining operations and maintaining the integrity of the blockchain.
 
-<img src="https://saks.digital/wp-content/uploads/2023/07/some.png" alt="Image Description" />
+<img src="https://saks.digital/static/media/go_blockchain.e6ffa0a99b60392a90fc.webp" alt="UI Example" />
 
 # Installation and running
 
