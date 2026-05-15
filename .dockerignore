@@ -1,0 +1,10 @@
+.git
+.github
+docs
+infrastructure
+k8s
+cmd/react_dashboard/node_modules
+cmd/react_dashboard/build
+**/tmp
+**/*.log
+.DS_Store
