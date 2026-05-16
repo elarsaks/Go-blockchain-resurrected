@@ -11,7 +11,7 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 # Install the "air" tool for live-reloading (if needed)
-RUN go install github.com/cosmtrek/air@latest
+RUN GOSUMDB=off go install github.com/cosmtrek/air@v1.40.4
 
 # Copy the entire parent_folder into the container
 COPY . .
