@@ -1,8 +1,7 @@
 
 # Go-blockchain
-- [*LIVE EXAMPLE*](https://elarsaks.github.io/Go-blockchain/)  
-🔴 𝗡𝗼𝘁𝗲: The backend of this project has been deactivated to reduce unnecessary costs.
-- [*PROJECT WIKI*](https://github.com/elarsaks/Go-blockchain/wiki)
+
+This project is currently maintained as a local development blockchain playground.
 
 # Table of Contents
 1. [About](#about)
@@ -24,13 +23,11 @@ This project is a Docker-based blockchain application that is currently under de
 2. **Community Resource:** I'm dedicated to creating a robust codebase that can serve as a valuable learning resource for anyone interested in this technology.
 
 
-![Topology Diagram](https://github.com/elarsaks/Go-blockchain/blob/main/docs/topology.png)
+See [Project Architecture](docs/Architecture.md) for the current local runtime architecture.
 
 
 # Workflow
 Users can access the client UI to interact with the blockchain. The API gateway processes these interactions and communicates with the blockchain miner nodes. These nodes then process transactions and maintain the distributed ledger of the blockchain.
-
-**The Docker configuration of this application ensures easy deployment and scalability, making it a robust and flexible solution for blockchain applications.**
 
 
 # Components
@@ -152,18 +149,3 @@ go run main.go wallet_server.go -port 8080 -gateway http://127.0.0.1:5001
 **These commands run only one miner. If you want to run multiple miners, open multiple new terminals and run the same command with different port numbers.**
 
 **Feel free to adjust the port numbers as needed to run multiple miners concurrently.**
-
-
-
-K8-s (Under development)
-------------------------
-
-To run it in kubernets, execute the following command in *Go-Blockchain/k8s/*:
-```bash
-kubectl apply -f .\deployment.yaml
-```
-
-TODO: 
-- Fix networking between pods (Use env variables)
-
-
