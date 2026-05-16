@@ -8,8 +8,10 @@ tmp
 #Ignore React build
 build
 
-# Ignore env file
-# .env
+# Ignore local environment files
+.env
+.env.*
+!.env.example
 
-# Ignore keys folder
-# keys/*
+# Ignore local development TLS keys
+cmd/react_dashboard/keys/*

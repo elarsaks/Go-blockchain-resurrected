@@ -1,10 +1,9 @@
 .git
 .github
 docs
-infrastructure
-k8s
 cmd/react_dashboard/node_modules
 cmd/react_dashboard/build
+cmd/react_dashboard/keys
 **/tmp
 **/*.log
 .DS_Store
