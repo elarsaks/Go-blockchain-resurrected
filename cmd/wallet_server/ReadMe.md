@@ -5,7 +5,6 @@ The Wallet Server is a web server that handles the connection between clients an
 
 ## Dependenies
 - Golang
-- Air
 
 ## Installation
 
@@ -20,15 +19,9 @@ go mod tidy
 ```
 
 ## Running
-To run the app with the Air library (live reloading), execute the following command in this folder:
+To run it directly via Golang, execute the following command from the repository root:
 ```bash
-PORT=5000 WALLET_SERVER_GATEWAY_TO_BLOCKCHAIN='http://127.0.0.1:5001' air
+PORT=5000 MINER_HOST=127.0.0.1 go run ./cmd/wallet_server
 ```
-
-To run it directly via Golang, execute the following command in this folder:
-```bash
-go run main.go
-```
-
 
 

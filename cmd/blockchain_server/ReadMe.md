@@ -5,7 +5,6 @@ Miner is a web server that facilitates the process of verifying and adding new b
 
 ## Dependenies
 - Golang
-- Air
 
 ## Installation
 
@@ -20,19 +19,13 @@ go mod tidy
 ```
 
 ## Running
-To run the app with the Air library (live reloading), execute the following command in this folder:
+To run it directly via Golang, execute the following command from the repository root:
 ```bash
-PORT=5001 HOST=127.0.0.1 air
-```
-
-To run it directly via Golang, execute the following command in this folder:
-```bash
-go run main.go -port 5001
+PORT=5001 go run ./cmd/blockchain_server
 ```
 
 **Note:**  
 These commands run only one miner. If you want to run multiple miners, open multiple new terminals and run the same command with different port numbers.
 
 Feel free to adjust the port numbers as needed to run multiple miners concurrently.
-
 

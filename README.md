@@ -1,8 +1,7 @@
 
 # Go-blockchain
-- [*LIVE EXAMPLE*](https://elarsaks.github.io/Go-blockchain/)  
-🔴 𝗡𝗼𝘁𝗲: The backend of this project has been deactivated to reduce unnecessary costs.
-- [*PROJECT WIKI*](https://github.com/elarsaks/Go-blockchain/wiki)
+
+This project is currently maintained as a local development blockchain playground.
 
 # Table of Contents
 1. [About](#about)
@@ -24,13 +23,11 @@ This project is a Docker-based blockchain application that is currently under de
 2. **Community Resource:** I'm dedicated to creating a robust codebase that can serve as a valuable learning resource for anyone interested in this technology.
 
 
-![Topology Diagram](https://github.com/elarsaks/Go-blockchain/blob/main/docs/topology.png)
+See [Project Architecture](docs/Architecture.md) for the current local runtime architecture.
 
 
 # Workflow
 Users can access the client UI to interact with the blockchain. The API gateway processes these interactions and communicates with the blockchain miner nodes. These nodes then process transactions and maintain the distributed ledger of the blockchain.
-
-**The Docker configuration of this application ensures easy deployment and scalability, making it a robust and flexible solution for blockchain applications.**
 
 
 # Components
@@ -92,7 +89,6 @@ npm start
 ## Run Wallet Server as standalone
 **Dependenies:**  
 - Golang
-- Air  
 
 **Installation:**  
 If you haven't already installed the project from the parent folder, follow these steps to set up the Wallet Server:
@@ -103,25 +99,20 @@ go mod tidy
 ```
 
 **Running:**  
-To run the app with the Air library (live reloading), execute the following command in *Go-Blockchain/wallet_server/*:
+To run the wallet server directly, execute the following command from the repository root:
 ```bash
-PORT=8081 HOST=127.0.0.1 GATEWAY_PORT=5001 air
-```
-To run it directly via Golang, execute the following command in this folder:
-```bash
-go run main.go blockchain_server.go -port 5001
+PORT=5000 MINER_HOST=127.0.0.1 go run ./cmd/wallet_server
 ```
 **App will start on port:**
 | App              | URL                                 |
 |------------------|-------------------------------------|
-| wallet_server | [http://localhost:3000](http://localhost:3000) |
+| wallet_server | [http://localhost:5000](http://localhost:5000) |
 
 ---
 <br></br>
 ## Run Miner / Node as standalone
 **Dependenies:**  
 - Golang
-- Air  
 
 **Installation:**  
 1. Navigate to the root folder of the project in your terminal.
@@ -131,39 +122,17 @@ go mod tidy
 ```
 
 **Running:**  
-To run the app with the Air library (live reloading), execute the following command in *Go-Blockchain/blockshain_server/*:
+To run one miner directly, execute the following command from the repository root:
 ```bash
-PORT=5001 air
-```
-
-**OR:**  
-
-To run it directly via Golang, execute the following command in *Go-Blockchain/blockshain_server/*:
-```bash
-go run main.go wallet_server.go -port 8080 -gateway http://127.0.0.1:5001
+PORT=5001 go run ./cmd/blockchain_server
 ```
 
 **App will start on port:**
 | App              | URL                                 |
 |------------------|-------------------------------------|
-| blockshain_server | [http://localhost:3000](http://localhost:3000) |
+| blockchain_server | [http://localhost:5001](http://localhost:5001) |
 
 **NOTE:**  
 **These commands run only one miner. If you want to run multiple miners, open multiple new terminals and run the same command with different port numbers.**
 
 **Feel free to adjust the port numbers as needed to run multiple miners concurrently.**
-
-
-
-K8-s (Under development)
-------------------------
-
-To run it in kubernets, execute the following command in *Go-Blockchain/k8s/*:
-```bash
-kubectl apply -f .\deployment.yaml
-```
-
-TODO: 
-- Fix networking between pods (Use env variables)
-
-
