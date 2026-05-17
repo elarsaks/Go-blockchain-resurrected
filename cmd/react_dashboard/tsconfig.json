@@ -23,7 +23,8 @@
     "paths": {
       "assets/*": ["assets/*"],
       "components/*": ["components/*"],
-      "api/*": ["api/*"]
+      "api/*": ["api/*"],
+      "utils/*": ["utils/*"]
     }
   },
   "include": [

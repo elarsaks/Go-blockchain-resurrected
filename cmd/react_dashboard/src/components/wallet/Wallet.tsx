@@ -5,6 +5,7 @@ import React, { useEffect, useState, useContext } from "react";
 import styled from "styled-components";
 import WalletHead from "./WalletHead";
 import { WalletContext } from "store/WalletProvider";
+import { isValidTransferAmount } from "utils/walletValidation";
 
 interface WalletContainerProps {
   isMiner: boolean;
@@ -82,18 +83,6 @@ type WalletType = "Miner" | "User";
 type WalletProps = {
   type: WalletType;
 };
-
-function isValidTransferAmount(amount: string, balance: string): boolean {
-  const parsedAmount = Number(amount);
-  const parsedBalance = Number(balance);
-
-  return (
-    Number.isFinite(parsedAmount) &&
-    Number.isFinite(parsedBalance) &&
-    parsedAmount > 0 &&
-    parsedAmount <= parsedBalance
-  );
-}
 
 const Wallet: React.FC<WalletProps> = ({ type }) => {
   const [isSendDisabled, setIsSendDisabled] = useState(false);
