@@ -2,7 +2,7 @@
 
 type BalanceResponse = {
   error: string;
-  balance: string;
+  balance: number;
 };
 
 type Block = {
@@ -80,8 +80,12 @@ type StoreWallet = StoreWalletDetails & { util: UtilState };
 type WalletStore = {
   minerWallet: StoreWallet;
   userWallet: StoreWallet;
-  setMinerWallet: React.Dispatch<React.SetStateAction<StoreWallet>>;
-  setUserWallet: React.Dispatch<React.SetStateAction<StoreWallet>>;
+  selectedMinerId: string;
+  selectMiner: (minerId: string) => void;
+  setMinerWallet: (wallet: Partial<StoreWallet>) => void;
+  setUserWallet: (wallet: Partial<StoreWallet>) => void;
+  setMinerWalletUtil: (util: UtilState) => void;
+  setUserWalletUtil: (util: UtilState) => void;
 };
 
 type WalletAction =

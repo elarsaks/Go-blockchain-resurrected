@@ -28,11 +28,10 @@ const AppInfoWrapper = styled.div`
   }
 
   a {
-    font-size: 18px; 
-    color: black; 
-    background-color: 
-    border: none; 
-    text-decoration: none; 
+    font-size: 18px;
+    color: black;
+    border: none;
+    text-decoration: none;
   }
 
   @media (max-width: 850px) {
@@ -77,7 +76,7 @@ const AppInfo: React.FC = () => {
         <b>
           Check out the project on{" "}
           <a
-            href="https://github.com/elarsaks/Go-blockchain"
+            href="https://github.com/elarsaks/Go-blockchain-resurrected"
             target="_blank"
             rel="noopener noreferrer"
           >

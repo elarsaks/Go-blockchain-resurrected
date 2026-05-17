@@ -108,6 +108,7 @@ wait_for_balance_at_least() {
 }
 
 echo "Building and starting Docker stack..."
+$COMPOSE down --remove-orphans >/dev/null || true
 $COMPOSE up --build -d
 
 echo "Waiting for wallet server and miner wallet..."

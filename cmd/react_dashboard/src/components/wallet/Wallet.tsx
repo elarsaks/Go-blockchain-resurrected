@@ -1,3 +1,4 @@
+import { getApiErrorMessage } from "api/client";
 import { transaction } from "api/wallet";
 import Notification from "components/shared/Notification";
 import React, { useEffect, useState, useContext } from "react";
@@ -13,7 +14,7 @@ const WalletContainer = styled.div<WalletContainerProps>`
   background-color: #f2f2f2;
   padding: 1rem;
   margin: 1rem;
-  border: 1px solid #ccc;
+  border: 1px solid #00acd7;
   border-radius: 8px;
   width: 350px;
 
@@ -70,8 +71,10 @@ const SendButton = styled.button<ButtonProps>`
   opacity: ${(props) => (props.disabled ? "0.6" : "1")};
 `;
 
+type WalletType = "Miner" | "User";
+
 type WalletProps = {
-  type: string;
+  type: WalletType;
 };
 
 const Wallet: React.FC<WalletProps> = ({ type }) => {
@@ -150,41 +153,24 @@ const Wallet: React.FC<WalletProps> = ({ type }) => {
         });
       })
       .catch((error) => {
-        console.log(error);
+        const message = getApiErrorMessage(error);
 
-        // TODO: Handle error (after fixing the backend)
-        // walletContext.setMinerWalletUtil({
-        //   isActive: true,
-        //   type: "error",
-        //   message: error.message,
-        // });
-        // walletContext.setUserWalletUtil({
-        //   isActive: true,
-        //   type: "error",
-        //   message: error.message,
-        // });
-      })
-      .finally(() => {
-        //* This is debug, until the backend is fixed
-        walletContext.setMinerWalletUtil({
+        wallet.setUtil({
           isActive: true,
-          type: "success",
-          message:
-            "The balance will be updated once the next block is mined. This process can take up to 28 seconds.",
-        });
-
-        walletContext.setUserWalletUtil({
-          isActive: true,
-          type: "success",
-          message:
-            "The balance will be updated once the next block is mined. This process can take up to 28 seconds.",
+          type: "error",
+          message,
         });
       });
   };
 
   return (
     <WalletContainer isMiner={type === "Miner"}>
-      <WalletHead type={type} walletDetails={wallet.details} />
+      <WalletHead
+        type={type}
+        walletDetails={wallet.details}
+        selectedMinerId={walletContext.selectedMinerId}
+        onMinerChange={walletContext.selectMiner}
+      />
 
       <Form>
         <Field>

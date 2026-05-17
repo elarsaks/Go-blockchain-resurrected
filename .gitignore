@@ -2,6 +2,9 @@
 # Ignore node modules 
 node_modules
 
+# Ignore macOS metadata
+.DS_Store
+
 # Ignore Go binaries
 tmp
 

@@ -6,7 +6,7 @@ import Background from "components/layout/Background";
 import BlockDiv from "components/BlockDiv";
 import Loader from "components/shared/Loader";
 import Notification from "components/shared/Notification";
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState } from "react";
 import styled from "styled-components";
 import UtilReducer from "store/UtilReducer";
 import Wallet from "components/wallet/Wallet";
@@ -46,48 +46,53 @@ function App() {
     message: "",
   });
 
-  const fetchchainData = useCallback(() => {
-    if (blockchain.length === 0) {
-      dispatchUtil({
-        type: "ON",
-        payload: {
-          type: "info",
-          message: "Fetching blockchain data...",
-        },
-      });
-    }
+  useEffect(() => {
+    let isMounted = true;
+    let hasLoadedBlocks = false;
 
-    return fetchBlockchainData()
-      .then((blocks) => {
-        setBlockchain(blocks);
-        dispatchUtil({
-          type: "OFF",
-          payload: null,
-        });
-      })
-      .catch((error) => {
+    const fetchChainData = () => {
+      if (!hasLoadedBlocks) {
         dispatchUtil({
           type: "ON",
           payload: {
-            type: "error",
-            message: error.message,
+            type: "info",
+            message: "Fetching blockchain data...",
           },
         });
-      });
-  }, [blockchain.length]);
+      }
 
-  useEffect(() => {
-    // Fetch blockchain data immediately on component mount
-    fetchchainData();
+      fetchBlockchainData()
+        .then((blocks) => {
+          if (!isMounted) return;
 
-    // Fetch blockchain data every 3 seconds
-    const intervalId = setInterval(() => {
-      fetchchainData();
-    }, 5000);
+          hasLoadedBlocks = true;
+          setBlockchain(blocks);
+          dispatchUtil({
+            type: "OFF",
+            payload: null,
+          });
+        })
+        .catch((error) => {
+          if (!isMounted) return;
 
-    // Clear interval on component unmount
-    return () => clearInterval(intervalId);
-  }, [fetchchainData]);
+          dispatchUtil({
+            type: "ON",
+            payload: {
+              type: "error",
+              message: error.message,
+            },
+          });
+        });
+    };
+
+    fetchChainData();
+    const intervalId = setInterval(fetchChainData, 5000);
+
+    return () => {
+      isMounted = false;
+      clearInterval(intervalId);
+    };
+  }, []);
 
   return (
     <AppWrapper>
@@ -114,7 +119,7 @@ function App() {
 
         {!utilState.isActive &&
           blockchain.map((block, index) => (
-            <React.Fragment key={index}>
+            <React.Fragment key={`${block.timestamp}-${block.previousHash}`}>
               <Loader height={100} />
               <BlockDiv block={block} />
             </React.Fragment>
