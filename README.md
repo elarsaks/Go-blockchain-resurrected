@@ -12,8 +12,9 @@ This project is currently maintained as a local development blockchain playgroun
    - [Run React Dashboard as Standalone](#run-react-dashboard-as-standalone)
    - [Run Wallet Server as Standalone](#run-wallet-server-as-standalone)
    - [Run Miner / Node as Standalone](#run-miner--node-as-standalone)
+   - [Run End-to-End Transfer Test](#run-end-to-end-transfer-test)
 
-# About  
+# About
 This project is a Docker-based blockchain application that is currently under development. It is written in Golang and features a user interface built in React. The application is composed of several key components, each serving a unique role in the overall functionality of the system.
 
 **This project serves two main purposes:**
@@ -42,10 +43,10 @@ Users can access the client UI to interact with the blockchain. The API gateway 
 # Installation and running
 
 ## Run all in Docker
-**Dependencies:**  
-- Docker & Docker Compose  
+**Dependencies:**
+- Docker & Docker Compose
 
-**Running:**  
+**Running:**
 - To run full-stack application in docker, at the root of this project folder run:
 ```bash
 docker-compose up --build
@@ -62,17 +63,33 @@ docker-compose up --build
 
 ---
 <br></br>
-## Run React Dashboard as standalone 
-**Dependenies:**    
-- Node v17  
+## Run End-to-End Transfer Test
+**Dependencies:**
+- Docker & Docker Compose
+- Node.js
+- curl
 
-**Installation:**  
+**Running:**
+To verify the Docker stack, wallet creation, transaction submission, mining, and balance update flow:
+```bash
+./scripts/e2e-transfer.sh
+```
+
+The test starts the Docker stack, creates a miner wallet and user wallet through the wallet server, sends `1` coin from the miner wallet to the user wallet, waits until the transfer is mined, and then stops the stack.
+
+---
+<br></br>
+## Run React Dashboard as standalone
+**Dependenies:**
+- Node v17
+
+**Installation:**
 To set up the UI (client), run the following command in this *Go-Blockchain/react_dashboard/*:
 ```bash
 npm install
 ```
 
-**Running:**  
+**Running:**
 To run the UI, use the following command in this folder:
 ```bash
 npm start
@@ -87,10 +104,10 @@ npm start
 ---
 <br></br>
 ## Run Wallet Server as standalone
-**Dependenies:**  
+**Dependenies:**
 - Golang
 
-**Installation:**  
+**Installation:**
 If you haven't already installed the project from the parent folder, follow these steps to set up the Wallet Server:
 1. Navigate to the root folder of the project in your terminal.
 2. Run the following command to download the necessary dependencies:
@@ -98,7 +115,7 @@ If you haven't already installed the project from the parent folder, follow thes
 go mod tidy
 ```
 
-**Running:**  
+**Running:**
 To run the wallet server directly, execute the following command from the repository root:
 ```bash
 PORT=5000 MINER_HOST=127.0.0.1 go run ./cmd/wallet_server
@@ -111,17 +128,17 @@ PORT=5000 MINER_HOST=127.0.0.1 go run ./cmd/wallet_server
 ---
 <br></br>
 ## Run Miner / Node as standalone
-**Dependenies:**  
+**Dependenies:**
 - Golang
 
-**Installation:**  
+**Installation:**
 1. Navigate to the root folder of the project in your terminal.
 2. Run the following command to download the necessary dependencies:
 ```bash
 go mod tidy
 ```
 
-**Running:**  
+**Running:**
 To run one miner directly, execute the following command from the repository root:
 ```bash
 PORT=5001 go run ./cmd/blockchain_server
@@ -132,7 +149,7 @@ PORT=5001 go run ./cmd/blockchain_server
 |------------------|-------------------------------------|
 | blockchain_server | [http://localhost:5001](http://localhost:5001) |
 
-**NOTE:**  
+**NOTE:**
 **These commands run only one miner. If you want to run multiple miners, open multiple new terminals and run the same command with different port numbers.**
 
 **Feel free to adjust the port numbers as needed to run multiple miners concurrently.**
