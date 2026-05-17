@@ -30,8 +30,6 @@ type MiningContextType = {
   setMining: React.Dispatch<React.SetStateAction<boolean>>;
 };
 
-// If type is "ON", then payload is an object with type and message properties.
-// If type is "OFF", then payload is null.
 type UtilAction =
   | {
       type: "ON";
