@@ -2,7 +2,7 @@
 
 type BalanceResponse = {
   error: string;
-  balance: string;
+  balance: number;
 };
 
 type Block = {
@@ -30,8 +30,6 @@ type MiningContextType = {
   setMining: React.Dispatch<React.SetStateAction<boolean>>;
 };
 
-// If type is "ON", then payload is an object with type and message properties.
-// If type is "OFF", then payload is null.
 type UtilAction =
   | {
       type: "ON";
@@ -80,8 +78,12 @@ type StoreWallet = StoreWalletDetails & { util: UtilState };
 type WalletStore = {
   minerWallet: StoreWallet;
   userWallet: StoreWallet;
-  setMinerWallet: React.Dispatch<React.SetStateAction<StoreWallet>>;
-  setUserWallet: React.Dispatch<React.SetStateAction<StoreWallet>>;
+  selectedMinerId: string;
+  selectMiner: (minerId: string) => void;
+  setMinerWallet: (wallet: Partial<StoreWallet>) => void;
+  setUserWallet: (wallet: Partial<StoreWallet>) => void;
+  setMinerWalletUtil: (util: UtilState) => void;
+  setUserWalletUtil: (util: UtilState) => void;
 };
 
 type WalletAction =

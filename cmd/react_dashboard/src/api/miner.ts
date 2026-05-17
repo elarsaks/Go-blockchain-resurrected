@@ -1,23 +1,20 @@
-import axios from "axios";
-
-let { REACT_APP_GATEWAY_API_URL } = process.env;
-if (!REACT_APP_GATEWAY_API_URL) {
-  REACT_APP_GATEWAY_API_URL = "http://localhost:5000";
-}
+import { apiClient } from "api/client";
 
 // Fetch latest blocks
-function fetchBlockchainData(): Promise<[Block]> {
-  return axios
-    .get<[Block]>(REACT_APP_GATEWAY_API_URL + "/miner/blocks?amount=10")
+function fetchBlockchainData(): Promise<Block[]> {
+  return apiClient
+    .get<Block[]>("/miner/blocks", {
+      params: { amount: 10 },
+    })
     .then((response) => response.data);
 }
 
 // Fetch miner wallet details
 function fetchMinerWalletDetails(minerId: string): Promise<WalletDetails> {
-  return axios
-    .post<WalletDetailsResponse>(
-      REACT_APP_GATEWAY_API_URL + "/miner/wallet?miner_id=" + minerId
-    )
+  return apiClient
+    .post<WalletDetailsResponse>("/miner/wallet", null, {
+      params: { miner_id: minerId },
+    })
     .then(({ data }) => {
       const camelCaseResponseData: WalletDetails = {
         blockchainAddress: data.blockchainAddress,

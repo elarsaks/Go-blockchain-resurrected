@@ -32,7 +32,7 @@ const Cube: React.FC = () => {
     const geometry = new BoxGeometry(1, 1, 1);
 
     // Create edge material
-    const edgeMaterial = new LineBasicMaterial({ color: "#FFFFFF" });
+    const edgeMaterial = new LineBasicMaterial({ color: "#ffffff" });
     const edges = new EdgesGeometry(geometry);
     const cubeEdges = new LineSegments(edges, edgeMaterial);
     scene.add(cubeEdges);

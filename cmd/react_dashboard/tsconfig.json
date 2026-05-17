@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "types": ["vitest/globals"],
     "target": "es5",
     "lib": [
       "dom",
@@ -23,7 +24,8 @@
     "paths": {
       "assets/*": ["assets/*"],
       "components/*": ["components/*"],
-      "api/*": ["api/*"]
+      "api/*": ["api/*"],
+      "utils/*": ["utils/*"]
     }
   },
   "include": [

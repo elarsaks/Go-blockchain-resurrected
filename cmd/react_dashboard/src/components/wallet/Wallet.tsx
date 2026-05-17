@@ -1,9 +1,11 @@
+import { getApiErrorMessage } from "api/client";
 import { transaction } from "api/wallet";
 import Notification from "components/shared/Notification";
 import React, { useEffect, useState, useContext } from "react";
 import styled from "styled-components";
 import WalletHead from "./WalletHead";
 import { WalletContext } from "store/WalletProvider";
+import { isValidTransferAmount } from "utils/walletValidation";
 
 interface WalletContainerProps {
   isMiner: boolean;
@@ -13,7 +15,7 @@ const WalletContainer = styled.div<WalletContainerProps>`
   background-color: #f2f2f2;
   padding: 1rem;
   margin: 1rem;
-  border: 1px solid #ccc;
+  border: 1px solid #00acd7;
   border-radius: 8px;
   width: 350px;
 
@@ -46,6 +48,12 @@ const TextArea = styled.textarea`
   width: 95%;
   padding: 0.5rem;
   text-align: left;
+
+  &:read-only {
+    background-color: #e9ecef;
+    color: #495057;
+    cursor: default;
+  }
 `;
 
 const Input = styled.input`
@@ -70,12 +78,14 @@ const SendButton = styled.button<ButtonProps>`
   opacity: ${(props) => (props.disabled ? "0.6" : "1")};
 `;
 
+type WalletType = "Miner" | "User";
+
 type WalletProps = {
-  type: string;
+  type: WalletType;
 };
 
 const Wallet: React.FC<WalletProps> = ({ type }) => {
-  const [isAnyFieldEmpty, setIsAnyFieldEmpty] = useState(false);
+  const [isSendDisabled, setIsSendDisabled] = useState(false);
 
   const walletContext = useContext(WalletContext);
 
@@ -93,16 +103,15 @@ const Wallet: React.FC<WalletProps> = ({ type }) => {
         };
 
   useEffect(() => {
-    const isAmountExceedingBalance =
-      parseFloat(wallet.details.amount) > parseFloat(wallet.details.balance);
-
-    setIsAnyFieldEmpty(
+    const isMissingRequiredField =
       wallet.details.blockchainAddress === "" ||
-        wallet.details.privateKey === "" ||
-        wallet.details.publicKey === "" ||
-        wallet.details.recipientAddress === "" ||
-        wallet.details.amount === "" ||
-        isAmountExceedingBalance || // Add this condition
+      wallet.details.privateKey === "" ||
+      wallet.details.publicKey === "" ||
+      wallet.details.recipientAddress === "";
+
+    setIsSendDisabled(
+      isMissingRequiredField ||
+        !isValidTransferAmount(wallet.details.amount, wallet.details.balance) ||
         wallet.details.util.isActive
     );
   }, [wallet.details]);
@@ -150,41 +159,24 @@ const Wallet: React.FC<WalletProps> = ({ type }) => {
         });
       })
       .catch((error) => {
-        console.log(error);
+        const message = getApiErrorMessage(error);
 
-        // TODO: Handle error (after fixing the backend)
-        // walletContext.setMinerWalletUtil({
-        //   isActive: true,
-        //   type: "error",
-        //   message: error.message,
-        // });
-        // walletContext.setUserWalletUtil({
-        //   isActive: true,
-        //   type: "error",
-        //   message: error.message,
-        // });
-      })
-      .finally(() => {
-        //* This is debug, until the backend is fixed
-        walletContext.setMinerWalletUtil({
+        wallet.setUtil({
           isActive: true,
-          type: "success",
-          message:
-            "The balance will be updated once the next block is mined. This process can take up to 28 seconds.",
-        });
-
-        walletContext.setUserWalletUtil({
-          isActive: true,
-          type: "success",
-          message:
-            "The balance will be updated once the next block is mined. This process can take up to 28 seconds.",
+          type: "error",
+          message,
         });
       });
   };
 
   return (
     <WalletContainer isMiner={type === "Miner"}>
-      <WalletHead type={type} walletDetails={wallet.details} />
+      <WalletHead
+        type={type}
+        walletDetails={wallet.details}
+        selectedMinerId={walletContext.selectedMinerId}
+        onMinerChange={walletContext.selectMiner}
+      />
 
       <Form>
         <Field>
@@ -193,7 +185,7 @@ const Wallet: React.FC<WalletProps> = ({ type }) => {
             rows={4}
             name="publicKey"
             value={wallet.details.publicKey}
-            onChange={handleInputChange}
+            readOnly
           />
         </Field>
 
@@ -203,7 +195,7 @@ const Wallet: React.FC<WalletProps> = ({ type }) => {
             rows={2}
             name="privateKey"
             value={wallet.details.privateKey}
-            onChange={handleInputChange}
+            readOnly
           />
         </Field>
 
@@ -215,7 +207,7 @@ const Wallet: React.FC<WalletProps> = ({ type }) => {
             rows={2}
             name="blockchainAddress"
             value={wallet.details.blockchainAddress}
-            onChange={handleInputChange}
+            readOnly
           />
         </Field>
 
@@ -243,7 +235,8 @@ const Wallet: React.FC<WalletProps> = ({ type }) => {
             value={wallet.details.amount.toString()}
             onChange={handleInputChange}
             max={wallet.details.balance}
-            min="0"
+            min="0.00000001"
+            step="any"
           />
         </Field>
 
@@ -251,14 +244,13 @@ const Wallet: React.FC<WalletProps> = ({ type }) => {
           <Notification
             type={wallet.details.util.type}
             message={wallet.details.util.message}
-            underDevelopment={wallet.details.util.type === "error"}
             insideContainer={true}
           />
         )}
 
         <SendButton
           type="submit"
-          disabled={isAnyFieldEmpty}
+          disabled={isSendDisabled}
           onClick={sendCrypto}
         >
           Send crypto

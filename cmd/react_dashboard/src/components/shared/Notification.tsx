@@ -59,28 +59,15 @@ const Message = styled.p`
   font-size: 1.2em;
 `;
 
-const SubMessage = styled.h1`
-  color: white;
-  font-weight: bold;
-  margin: 10px;
-  font-size: 1.2em;
-
-  &.error {
-    color: black;
-  }
-`;
-
 interface NotificationProps {
   message: string;
   type: "info" | "warning" | "error" | "success";
-  underDevelopment?: boolean;
   insideContainer: boolean;
 }
 
 const Notification: React.FC<NotificationProps> = ({
   message,
   type,
-  underDevelopment,
   insideContainer,
 }) => {
   if (!message) {
@@ -91,13 +78,7 @@ const Notification: React.FC<NotificationProps> = ({
     <NotificationWrapper className={type} insideContainer={insideContainer}>
       <Message className={type}>{message}</Message>
 
-      <Loader height={100} />
-
-      {underDevelopment ? (
-        <SubMessage className={type}>🚧 UNDER DEVELOPMENT 🚧</SubMessage>
-      ) : (
-        <br />
-      )}
+      {type === "info" && <Loader height={100} />}
     </NotificationWrapper>
   );
 };

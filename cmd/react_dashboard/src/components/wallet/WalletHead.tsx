@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import styled from "styled-components";
 
 const TitleRow = styled.div`
@@ -42,20 +42,18 @@ const miners = [
 interface WalletHeadProps {
   type: string;
   walletDetails: WalletState;
+  selectedMinerId: string;
+  onMinerChange: (minerId: string) => void;
 }
 
-const WalletHead: React.FC<WalletHeadProps> = ({ type, walletDetails }) => {
-  const [selectedMiner, setSelectedMiner] = useState<{
-    value: string;
-    text: string;
-  }>(miners[0]);
-
+const WalletHead: React.FC<WalletHeadProps> = ({
+  type,
+  walletDetails,
+  selectedMinerId,
+  onMinerChange,
+}) => {
   const handleMinerChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    const selectedValue = event.target.value;
-    const selectedMiner = miners.find((miner) => miner.value === selectedValue);
-
-    // TODO: Dispatch action to update miner wallet
-    if (selectedMiner) setSelectedMiner(selectedMiner);
+    onMinerChange(event.target.value);
   };
 
   return (
@@ -69,9 +67,8 @@ const WalletHead: React.FC<WalletHeadProps> = ({ type, walletDetails }) => {
         <TitleRow>
           <MinerTitleContainer>
             <TypeSelect
-              value={selectedMiner.value}
+              value={selectedMinerId}
               onChange={handleMinerChange}
-              disabled={true}
             >
               {miners.map((miner) => (
                 <option key={miner.value} value={miner.value}>

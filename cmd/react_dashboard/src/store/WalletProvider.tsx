@@ -6,6 +6,8 @@ import React, {
   useCallback,
   useEffect,
   useReducer,
+  useRef,
+  useState,
 } from "react";
 
 const initialState: StoreWallet = {
@@ -25,6 +27,8 @@ const initialState: StoreWallet = {
 export const WalletContext = createContext({
   minerWallet: initialState,
   userWallet: initialState,
+  selectedMinerId: "1",
+  selectMiner: (minerId: string) => {},
   setUserWallet: (wallet: Partial<StoreWallet>) => {},
   setMinerWallet: (wallet: Partial<StoreWallet>) => {},
   setUserWalletUtil: (util: UtilState) => {},
@@ -48,6 +52,10 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({
     WalletReducer,
     initialState
   );
+  const [selectedMinerId, setSelectedMinerId] = useState("1");
+  const walletRequestIdRef = useRef(0);
+  const minerBalanceRequestIdRef = useRef(0);
+  const userBalanceRequestIdRef = useRef(0);
 
   function clearLoader(type: string) {
     if (type === "User") {
@@ -71,7 +79,32 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({
     }
   }
 
-  const getUserWallet = useCallback(() => {
+  const setWalletSetupError = useCallback((message: string) => {
+    dispatchUserWallet({
+      type: "SET_WALLET_UTIL",
+      payload: {
+        isActive: true,
+        type: "error",
+        message,
+      },
+    });
+
+    dispatchMinerWallet({
+      type: "SET_WALLET_UTIL",
+      payload: {
+        isActive: true,
+        type: "error",
+        message,
+      },
+    });
+  }, []);
+
+  const loadWallets = useCallback((minerId: string) => {
+    const requestId = walletRequestIdRef.current + 1;
+    walletRequestIdRef.current = requestId;
+    minerBalanceRequestIdRef.current += 1;
+    userBalanceRequestIdRef.current += 1;
+
     dispatchUserWallet({
       type: "SET_WALLET_UTIL",
       payload: {
@@ -82,31 +115,6 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({
       },
     });
 
-    fetchUserWalletDetails()
-      .then((userDetails) => {
-        dispatchUserWallet({ type: "SET_WALLET", payload: userDetails });
-        dispatchMinerWallet({
-          type: "SET_WALLET",
-          payload: {
-            recipientAddress: userDetails.blockchainAddress,
-          },
-        });
-
-        clearLoader("User");
-      })
-      .catch((error) => {
-        dispatchUserWallet({
-          type: "SET_WALLET_UTIL",
-          payload: {
-            isActive: true,
-            type: "error",
-            message: "Failed to fetch user wallet details",
-          },
-        });
-      });
-  }, [dispatchMinerWallet, dispatchUserWallet]);
-
-  const getMinerWallet = useCallback(() => {
     dispatchMinerWallet({
       type: "SET_WALLET_UTIL",
       payload: {
@@ -115,41 +123,110 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({
         message: "Fetching miner wallet details",
       },
     });
-    fetchMinerWalletDetails("1")
-      .then((minerDetails) => {
-        dispatchMinerWallet({ type: "SET_WALLET", payload: minerDetails });
+
+    Promise.all([fetchMinerWalletDetails(minerId), fetchUserWalletDetails()])
+      .then(([minerDetails, userDetails]) => {
+        if (requestId !== walletRequestIdRef.current) return;
+
+        dispatchMinerWallet({
+          type: "SET_WALLET",
+          payload: {
+            ...minerDetails,
+            amount: "1",
+            recipientAddress: userDetails.blockchainAddress,
+          },
+        });
+
         dispatchUserWallet({
           type: "SET_WALLET",
           payload: {
+            ...userDetails,
             recipientAddress: minerDetails.blockchainAddress,
           },
         });
 
         clearLoader("Miner");
+        clearLoader("User");
       })
-      .catch((error) => {
-        dispatchMinerWallet({
-          type: "SET_WALLET_UTIL",
-          payload: {
-            isActive: true,
-            type: "error",
-            message: "Failed to fetch miner wallet details",
-          },
-        });
+      .catch(() => {
+        if (requestId !== walletRequestIdRef.current) return;
+
+        setWalletSetupError("Failed to initialize wallets");
       });
-  }, [dispatchMinerWallet, dispatchUserWallet]);
+  }, [setWalletSetupError]);
+
+  const selectMiner = useCallback(
+    (minerId: string) => {
+      const requestId = walletRequestIdRef.current + 1;
+      walletRequestIdRef.current = requestId;
+      minerBalanceRequestIdRef.current += 1;
+
+      setSelectedMinerId(minerId);
+
+      dispatchMinerWallet({
+        type: "SET_WALLET_UTIL",
+        payload: {
+          isActive: true,
+          type: "info",
+          message: "Fetching miner wallet details",
+        },
+      });
+
+      fetchMinerWalletDetails(minerId)
+        .then((minerDetails) => {
+          if (requestId !== walletRequestIdRef.current) return;
+
+          dispatchMinerWallet({
+            type: "SET_WALLET",
+            payload: {
+              ...minerDetails,
+              amount: "1",
+              recipientAddress: userWallet.blockchainAddress,
+            },
+          });
+
+          dispatchUserWallet({
+            type: "SET_WALLET",
+            payload: {
+              recipientAddress: minerDetails.blockchainAddress,
+            },
+          });
+
+          clearLoader("Miner");
+        })
+        .catch(() => {
+          if (requestId !== walletRequestIdRef.current) return;
+
+          dispatchMinerWallet({
+            type: "SET_WALLET_UTIL",
+            payload: {
+              isActive: true,
+              type: "error",
+              message: "Failed to fetch miner wallet details",
+            },
+          });
+        });
+    },
+    [userWallet.blockchainAddress]
+  );
 
   const getUserWalletWalletBalance = useCallback(() => {
+    const requestId = userBalanceRequestIdRef.current + 1;
+    userBalanceRequestIdRef.current = requestId;
+
     fetchWalletBalance(userWallet.blockchainAddress)
       .then((userBalance) => {
+        if (requestId !== userBalanceRequestIdRef.current) return;
+
         dispatchUserWallet({
           type: "SET_WALLET",
-          payload: { balance: userBalance },
+          payload: { balance: String(userBalance) },
         });
 
         clearLoader("User");
       })
-      .catch((error) =>
+      .catch(() =>
+        requestId === userBalanceRequestIdRef.current &&
         dispatchUserWallet({
           type: "SET_WALLET_UTIL",
           payload: {
@@ -162,21 +239,27 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({
   }, [userWallet.blockchainAddress]);
 
   const getMinerWalletWalletBalance = useCallback(() => {
+    const requestId = minerBalanceRequestIdRef.current + 1;
+    minerBalanceRequestIdRef.current = requestId;
+
     fetchWalletBalance(minerWallet.blockchainAddress)
       .then((minerBalance) => {
+        if (requestId !== minerBalanceRequestIdRef.current) return;
+
         dispatchMinerWallet({
           type: "SET_WALLET",
-          payload: { balance: minerBalance },
+          payload: { balance: String(minerBalance) },
         });
         clearLoader("Miner");
       })
-      .catch((error) =>
+      .catch(() =>
+        requestId === minerBalanceRequestIdRef.current &&
         dispatchMinerWallet({
           type: "SET_WALLET_UTIL",
           payload: {
             isActive: true,
             type: "error",
-            message: "Failed to fetch miner wallet details", // Fixed the message to refer to miner instead of user
+            message: "Failed to fetch miner wallet details",
           },
         })
       );
@@ -184,9 +267,8 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({
 
   // Fetch wallet details
   useEffect(() => {
-    getMinerWallet();
-    getUserWallet();
-  }, [getMinerWallet, getUserWallet]);
+    loadWallets("1");
+  }, [loadWallets]);
 
   // Fetch wallet balance
   useEffect(() => {
@@ -205,6 +287,8 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({
       value={{
         minerWallet,
         userWallet,
+        selectedMinerId,
+        selectMiner,
         setUserWallet: (wallet: Partial<StoreWallet>) =>
           dispatchUserWallet({ type: "SET_WALLET", payload: wallet }),
         setMinerWallet: (wallet: Partial<StoreWallet>) =>

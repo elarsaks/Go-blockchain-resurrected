@@ -9,7 +9,7 @@ const BlockContainer = styled.div`
   background-color: #f2f2f2;
   padding: 1rem;
   margin: 1rem;
-  border: 1px solid #ccc;
+  border: 1px solid #00acd7;
   border-radius: 8px;
   max-width: 800px;
   width: 100%;
@@ -103,7 +103,7 @@ const BlockComponent: React.FC<BlockProps> = ({ block }) => (
         </tr>
       </thead>
       <tbody>
-        {block.transactions ? (
+        {block.transactions && block.transactions.length > 0 ? (
           block.transactions.map((transaction, idx) => (
             <NestedTableRow key={idx}>
               <NestedTableCell>
@@ -122,7 +122,7 @@ const BlockComponent: React.FC<BlockProps> = ({ block }) => (
           ))
         ) : (
           <tr>
-            <td colSpan={3}>No transactions (genesis block).</td>
+            <td colSpan={4}>No transactions (genesis block).</td>
           </tr>
         )}
       </tbody>
