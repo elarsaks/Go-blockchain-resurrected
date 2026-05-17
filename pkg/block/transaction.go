@@ -104,7 +104,13 @@ func (bc *Blockchain) CreateTransaction(sender string, recipient string, message
 				senderPublicKey.Y.Bytes())
 			signatureStr := s.String()
 			bt := &TransactionRequest{
-				&message, &publicKeyStr, &recipient, &sender, &signatureStr, &value}
+				Message:                    &message,
+				RecipientBlockchainAddress: &recipient,
+				SenderBlockchainAddress:    &sender,
+				SenderPublicKey:            &publicKeyStr,
+				Signature:                  &signatureStr,
+				Value:                      &value,
+			}
 			m, _ := json.Marshal(bt)
 			buf := bytes.NewBuffer(m)
 			endpoint := fmt.Sprintf("%s/transactions", n)

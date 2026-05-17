@@ -1,0 +1,29 @@
+name: E2E Transfer
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: e2e-transfer-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e-transfer:
+    name: e2e-transfer
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.10.0"
+
+      - name: Run Docker end-to-end transfer test
+        run: ./scripts/e2e-transfer.sh
