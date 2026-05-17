@@ -16,9 +16,9 @@ function fetchUserWalletDetails(): Promise<WalletDetails> {
 
 function fetchWalletBalance(blockchainAddress: string): Promise<number> {
   return apiClient
-    .get<BalanceResponse>(
-      `/wallet/balance?blockchainAddress=${blockchainAddress}`
-    )
+    .get<BalanceResponse>("/wallet/balance", {
+      params: { blockchainAddress },
+    })
     .then(({ data }) => {
       if (data.error) {
         throw new Error(data.error);

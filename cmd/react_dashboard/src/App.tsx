@@ -112,7 +112,6 @@ function App() {
           <Notification
             type={utilState.type}
             message={utilState.message}
-            underDevelopment={true}
             insideContainer={false}
           />
         )}

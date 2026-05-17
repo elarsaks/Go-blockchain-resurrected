@@ -47,6 +47,12 @@ const TextArea = styled.textarea`
   width: 95%;
   padding: 0.5rem;
   text-align: left;
+
+  &:read-only {
+    background-color: #e9ecef;
+    color: #495057;
+    cursor: default;
+  }
 `;
 
 const Input = styled.input`
@@ -77,8 +83,20 @@ type WalletProps = {
   type: WalletType;
 };
 
+function isValidTransferAmount(amount: string, balance: string): boolean {
+  const parsedAmount = Number(amount);
+  const parsedBalance = Number(balance);
+
+  return (
+    Number.isFinite(parsedAmount) &&
+    Number.isFinite(parsedBalance) &&
+    parsedAmount > 0 &&
+    parsedAmount <= parsedBalance
+  );
+}
+
 const Wallet: React.FC<WalletProps> = ({ type }) => {
-  const [isAnyFieldEmpty, setIsAnyFieldEmpty] = useState(false);
+  const [isSendDisabled, setIsSendDisabled] = useState(false);
 
   const walletContext = useContext(WalletContext);
 
@@ -96,16 +114,15 @@ const Wallet: React.FC<WalletProps> = ({ type }) => {
         };
 
   useEffect(() => {
-    const isAmountExceedingBalance =
-      parseFloat(wallet.details.amount) > parseFloat(wallet.details.balance);
-
-    setIsAnyFieldEmpty(
+    const isMissingRequiredField =
       wallet.details.blockchainAddress === "" ||
-        wallet.details.privateKey === "" ||
-        wallet.details.publicKey === "" ||
-        wallet.details.recipientAddress === "" ||
-        wallet.details.amount === "" ||
-        isAmountExceedingBalance || // Add this condition
+      wallet.details.privateKey === "" ||
+      wallet.details.publicKey === "" ||
+      wallet.details.recipientAddress === "";
+
+    setIsSendDisabled(
+      isMissingRequiredField ||
+        !isValidTransferAmount(wallet.details.amount, wallet.details.balance) ||
         wallet.details.util.isActive
     );
   }, [wallet.details]);
@@ -179,7 +196,7 @@ const Wallet: React.FC<WalletProps> = ({ type }) => {
             rows={4}
             name="publicKey"
             value={wallet.details.publicKey}
-            onChange={handleInputChange}
+            readOnly
           />
         </Field>
 
@@ -189,7 +206,7 @@ const Wallet: React.FC<WalletProps> = ({ type }) => {
             rows={2}
             name="privateKey"
             value={wallet.details.privateKey}
-            onChange={handleInputChange}
+            readOnly
           />
         </Field>
 
@@ -201,7 +218,7 @@ const Wallet: React.FC<WalletProps> = ({ type }) => {
             rows={2}
             name="blockchainAddress"
             value={wallet.details.blockchainAddress}
-            onChange={handleInputChange}
+            readOnly
           />
         </Field>
 
@@ -229,7 +246,8 @@ const Wallet: React.FC<WalletProps> = ({ type }) => {
             value={wallet.details.amount.toString()}
             onChange={handleInputChange}
             max={wallet.details.balance}
-            min="0"
+            min="0.00000001"
+            step="any"
           />
         </Field>
 
@@ -237,14 +255,13 @@ const Wallet: React.FC<WalletProps> = ({ type }) => {
           <Notification
             type={wallet.details.util.type}
             message={wallet.details.util.message}
-            underDevelopment={wallet.details.util.type === "error"}
             insideContainer={true}
           />
         )}
 
         <SendButton
           type="submit"
-          disabled={isAnyFieldEmpty}
+          disabled={isSendDisabled}
           onClick={sendCrypto}
         >
           Send crypto
