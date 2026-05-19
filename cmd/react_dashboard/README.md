@@ -11,8 +11,8 @@ Key Features:
 
 By utilizing this UI, users can gain a better understanding of blockchain concepts, such as wallets, blocks, transactions, and the flow of cryptocurrencies. It serves as a visual representation of how the blockchain operates and facilitates learning in an interactive manner.
 
-## Dependenies
-- Node v17
+## Dependencies
+- Node v20
 
 ## Installation
 
@@ -26,4 +26,12 @@ npm install
 To run the UI, use the following command in this folder:
 ```bash
 npm start
+```
+
+The Vite dev server runs on http://localhost:3000 by default.
+
+To point the dashboard at a different gateway API, set:
+
+```bash
+VITE_GATEWAY_API_URL=http://localhost:5000 npm start
 ```

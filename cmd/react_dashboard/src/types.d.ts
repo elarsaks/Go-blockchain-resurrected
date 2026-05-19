@@ -1,5 +1,3 @@
-/// <reference types="react-scripts" />
-
 type BalanceResponse = {
   error: string;
   balance: number;

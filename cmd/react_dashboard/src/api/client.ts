@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const gatewayApiUrl =
-  process.env.REACT_APP_GATEWAY_API_URL || "http://localhost:5000";
+  import.meta.env.VITE_GATEWAY_API_URL || "http://localhost:5000";
 
 const apiClient = axios.create({
   baseURL: gatewayApiUrl,
@@ -16,4 +16,8 @@ function getApiErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "Unexpected API error";
 }
 
-export { apiClient, getApiErrorMessage };
+function isApiRequestCanceled(error: unknown): boolean {
+  return axios.isCancel(error);
+}
+
+export { apiClient, getApiErrorMessage, isApiRequestCanceled };

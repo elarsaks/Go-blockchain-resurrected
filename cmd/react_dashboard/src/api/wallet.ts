@@ -1,8 +1,8 @@
 import { apiClient } from "api/client";
 
-function fetchUserWalletDetails(): Promise<WalletDetails> {
+function fetchUserWalletDetails(signal?: AbortSignal): Promise<WalletDetails> {
   return apiClient
-    .post<WalletDetailsResponse>("/user/wallet")
+    .post<WalletDetailsResponse>("/user/wallet", null, { signal })
     .then(({ data }) => {
       const camelCaseResponseData: WalletDetails = {
         blockchainAddress: data.blockchainAddress,
@@ -14,10 +14,14 @@ function fetchUserWalletDetails(): Promise<WalletDetails> {
     });
 }
 
-function fetchWalletBalance(blockchainAddress: string): Promise<number> {
+function fetchWalletBalance(
+  blockchainAddress: string,
+  signal?: AbortSignal
+): Promise<number> {
   return apiClient
     .get<BalanceResponse>("/wallet/balance", {
       params: { blockchainAddress },
+      signal,
     })
     .then(({ data }) => {
       if (data.error) {
