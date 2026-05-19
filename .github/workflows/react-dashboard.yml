@@ -1,0 +1,50 @@
+name: React Dashboard
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/react-dashboard.yml"
+      - "cmd/react_dashboard/**"
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/react-dashboard.yml"
+      - "cmd/react_dashboard/**"
+
+concurrency:
+  group: react-dashboard-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  react-dashboard:
+    name: react-dashboard
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    defaults:
+      run:
+        working-directory: cmd/react_dashboard
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.10.0"
+          cache: npm
+          cache-dependency-path: cmd/react_dashboard/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests with coverage
+        run: npm run test:coverage
+
+      - name: Type-check
+        run: npx tsc --noEmit
+
+      - name: Build
+        run: npm run build
