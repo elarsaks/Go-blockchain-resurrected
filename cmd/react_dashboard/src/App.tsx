@@ -1,4 +1,5 @@
 import { fetchBlockchainData } from "api/miner";
+import { isApiRequestCanceled } from "api/client";
 import AppFooter from "components/layout/AppFooter";
 import AppHeader from "components/layout/AppHeader";
 import AppInfo from "components/layout/AppInfo";
@@ -6,7 +7,7 @@ import Background from "components/layout/Background";
 import BlockDiv from "components/BlockDiv";
 import Loader from "components/shared/Loader";
 import Notification from "components/shared/Notification";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 import UtilReducer from "store/UtilReducer";
 import Wallet from "components/wallet/Wallet";
@@ -40,6 +41,7 @@ const WalletWrapperContainer = styled.div`
 
 function App() {
   const [blockchain, setBlockchain] = useState<Block[]>([]);
+  const blockchainRequestRef = useRef<AbortController | null>(null);
   const [utilState, dispatchUtil] = React.useReducer(UtilReducer, {
     isActive: false,
     type: "info",
@@ -51,6 +53,10 @@ function App() {
     let hasLoadedBlocks = false;
 
     const fetchChainData = () => {
+      blockchainRequestRef.current?.abort();
+      const controller = new AbortController();
+      blockchainRequestRef.current = controller;
+
       if (!hasLoadedBlocks) {
         dispatchUtil({
           type: "ON",
@@ -61,7 +67,7 @@ function App() {
         });
       }
 
-      fetchBlockchainData()
+      fetchBlockchainData(controller.signal)
         .then((blocks) => {
           if (!isMounted) return;
 
@@ -73,6 +79,7 @@ function App() {
           });
         })
         .catch((error) => {
+          if (isApiRequestCanceled(error)) return;
           if (!isMounted) return;
 
           dispatchUtil({
@@ -90,6 +97,7 @@ function App() {
 
     return () => {
       isMounted = false;
+      blockchainRequestRef.current?.abort();
       clearInterval(intervalId);
     };
   }, []);

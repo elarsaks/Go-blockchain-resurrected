@@ -1,11 +1,16 @@
 # Ignore node_modules directory
 node_modules
 
+# Ignore generated output
+build
+coverage
+dist
+
 # Ignore .git directory
 .git
 
 # Ignore any log files
 *.log
 
-# Ignore the build output directory
-build
+# Ignore macOS metadata
+.DS_Store

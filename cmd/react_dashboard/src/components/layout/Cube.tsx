@@ -48,8 +48,9 @@ const Cube: React.FC = () => {
 
     camera.position.z = 1.5;
 
+    let animationFrameId = 0;
     const animate = () => {
-      requestAnimationFrame(animate);
+      animationFrameId = requestAnimationFrame(animate);
       cubeEdges.rotation.x += 0.01;
       cubeEdges.rotation.y += 0.01;
       cubeMesh.rotation.x += 0.01;
@@ -61,7 +62,16 @@ const Cube: React.FC = () => {
     animate();
 
     return () => {
-      currentRef.removeChild(renderer.domElement);
+      cancelAnimationFrame(animationFrameId);
+
+      geometry.dispose();
+      edgeMaterial.dispose();
+      faceMaterial.dispose();
+      renderer.dispose();
+
+      if (currentRef.contains(renderer.domElement)) {
+        currentRef.removeChild(renderer.domElement);
+      }
     };
   }, []);
 

@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
-    "types": ["vitest/globals"],
-    "target": "es5",
+    "types": ["vitest/globals", "vite/client"],
+    "target": "es2020",
     "lib": [
       "dom",
       "dom.iterable",
