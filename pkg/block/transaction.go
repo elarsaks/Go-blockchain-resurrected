@@ -138,7 +138,7 @@ func (bc *Blockchain) CreateTransaction(sender string, recipient string, message
 
 // Copy the transaction pool
 func (bc *Blockchain) CopyTransactionPool() []*Transaction {
-	transactions := make([]*Transaction, 0)
+	transactions := make([]*Transaction, 0, len(bc.transactionPool))
 	for _, t := range bc.transactionPool {
 		transactions = append(transactions,
 			NewTransaction(
@@ -157,7 +157,7 @@ func NewTransaction(sender string, recipient string, message string, value float
 
 // Get the transaction pool the Blockchain
 func (bc *Blockchain) TransactionPool() []*Transaction {
-	return bc.transactionPool
+	return append([]*Transaction(nil), bc.transactionPool...)
 }
 
 // Validate checks if the transaction request is valid.

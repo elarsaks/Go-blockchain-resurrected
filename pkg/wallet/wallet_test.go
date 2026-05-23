@@ -32,3 +32,31 @@ func TestTransactionMarshalJSONUsesCorrectAddressFields(t *testing.T) {
 		t.Fatalf("transaction JSON = %s, want %s", got, want)
 	}
 }
+
+func TestNewWalletWithErrorCreatesWallet(t *testing.T) {
+	wallet, err := NewWalletWithError()
+	if err != nil {
+		t.Fatalf("NewWalletWithError returned error: %v", err)
+	}
+	if wallet.PrivateKey() == nil {
+		t.Fatal("private key is nil")
+	}
+	if wallet.PublicKey() == nil {
+		t.Fatal("public key is nil")
+	}
+	if wallet.BlockchainAddress() == "" {
+		t.Fatal("blockchain address is empty")
+	}
+}
+
+func TestGenerateSignatureWithErrorRejectsMissingPrivateKey(t *testing.T) {
+	transaction := NewTransaction("hello", "recipient", "sender", nil, nil, 2)
+
+	signature, err := transaction.GenerateSignatureWithError()
+	if err == nil {
+		t.Fatal("expected missing private key to return an error")
+	}
+	if signature != nil {
+		t.Fatal("signature should be nil when signing fails")
+	}
+}
