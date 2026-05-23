@@ -99,22 +99,37 @@ func (b *Block) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON customizes the JSON decoding of the block.
 func (b *Block) UnmarshalJSON(data []byte) error {
-	var previousHash string
-	v := &struct {
+	var v struct {
 		Timestamp    *int64          `json:"timestamp"`
 		Nonce        *int            `json:"nonce"`
 		PreviousHash *string         `json:"previousHash"`
 		Transactions *[]*Transaction `json:"transactions"`
-	}{
-		Timestamp:    &b.timestamp,
-		Nonce:        &b.nonce,
-		PreviousHash: &previousHash,
-		Transactions: &b.transactions,
 	}
 	if err := json.Unmarshal(data, &v); err != nil {
 		return err
 	}
-	ph, _ := hex.DecodeString(*v.PreviousHash)
+	if v.Timestamp == nil {
+		return fmt.Errorf("block timestamp is required")
+	}
+	if v.Nonce == nil {
+		return fmt.Errorf("block nonce is required")
+	}
+	if v.PreviousHash == nil {
+		return fmt.Errorf("block previousHash is required")
+	}
+	if v.Transactions == nil {
+		return fmt.Errorf("block transactions are required")
+	}
+	ph, err := hex.DecodeString(*v.PreviousHash)
+	if err != nil {
+		return fmt.Errorf("decode previousHash: %w", err)
+	}
+	if len(ph) != sha256.Size {
+		return fmt.Errorf("previousHash must be %d bytes, got %d", sha256.Size, len(ph))
+	}
+	b.timestamp = *v.Timestamp
+	b.nonce = *v.Nonce
+	b.transactions = *v.Transactions
 	copy(b.previousHash[:], ph[:32])
 	return nil
 }
