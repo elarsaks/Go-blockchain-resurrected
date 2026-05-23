@@ -52,15 +52,19 @@ func (bc *Blockchain) Mining() bool {
 		fmt.Println("Send consensus to neigbour ", n)
 
 		endpoint := fmt.Sprintf("%s/consensus", n)
-		client := &http.Client{}
-		req, _ := http.NewRequest("PUT", endpoint, nil)
-		resp, err := client.Do(req)
+		req, err := http.NewRequest("PUT", endpoint, nil)
+		if err != nil {
+			log.Printf("ERROR: %v", err)
+			return false
+		}
+		resp, err := peerHTTPClient.Do(req)
 
 		// If an error occurred making the request, log the error
 		if err != nil {
 			log.Printf("ERROR: %v", err)
 			return false
 		}
+		_ = resp.Body.Close()
 
 		log.Printf("%v", resp)
 	}
@@ -138,7 +142,7 @@ func (bc *Blockchain) ResolveConflicts() bool {
 		endpoint := fmt.Sprintf("%s/chain", n)
 
 		// Send an HTTP GET request to the neighbor's endpoint to fetch their chain
-		resp, err := http.Get(endpoint)
+		resp, err := peerHTTPClient.Get(endpoint)
 		if err != nil {
 
 			// Log any error that occurred while fetching the chain
@@ -153,6 +157,7 @@ func (bc *Blockchain) ResolveConflicts() bool {
 
 			// Decode the JSON response into a Blockchain object
 			err := decoder.Decode(&bcResp)
+			_ = resp.Body.Close()
 			if err != nil {
 				// Log any error that occurred during JSON decoding
 				log.Printf("ERROR: Failed to decode JSON response from neighbor %s: %v", n, err)
@@ -169,6 +174,7 @@ func (bc *Blockchain) ResolveConflicts() bool {
 				longestChain = chain
 			}
 		} else {
+			_ = resp.Body.Close()
 			// Log the status code if the request to the neighbor's endpoint was not successful
 			log.Printf("WARNING: Failed to fetch chain from neighbor %s. Status code: %d", n, resp.StatusCode)
 		}
