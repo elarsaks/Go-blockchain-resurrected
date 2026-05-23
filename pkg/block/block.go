@@ -61,7 +61,7 @@ func (b *Block) Nonce() int {
 }
 
 func (b *Block) Transactions() []*Transaction {
-	return b.transactions
+	return append([]*Transaction(nil), b.transactions...)
 }
 
 // Print displays the block's attributes.

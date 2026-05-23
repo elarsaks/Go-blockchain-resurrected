@@ -39,7 +39,7 @@ func NewBlockchain(blockchainAddress string, port uint16) *Blockchain {
 
 // Chain returns the chain of the Blockchain.
 func (bc *Blockchain) Chain() []*Block {
-	return bc.chain
+	return append([]*Block(nil), bc.chain...)
 }
 
 // Run initializes and runs the Blockchain.
