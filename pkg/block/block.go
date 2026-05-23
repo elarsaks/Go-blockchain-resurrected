@@ -61,6 +61,9 @@ func (b *Block) Nonce() int {
 }
 
 func (b *Block) Transactions() []*Transaction {
+	if len(b.transactions) == 0 {
+		return []*Transaction{}
+	}
 	return append([]*Transaction(nil), b.transactions...)
 }
 
@@ -131,7 +134,7 @@ func (b *Block) UnmarshalJSON(data []byte) error {
 	}
 	b.timestamp = *v.Timestamp
 	b.nonce = *v.Nonce
-	if v.Transactions == nil {
+	if v.Transactions == nil || *v.Transactions == nil {
 		b.transactions = []*Transaction{}
 	} else {
 		b.transactions = *v.Transactions
