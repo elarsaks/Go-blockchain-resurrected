@@ -25,7 +25,7 @@ This project is a Docker-based blockchain application that is currently under de
 2. **Community Resource:** I'm dedicated to creating a robust codebase that can serve as a valuable learning resource for anyone interested in this technology.
 
 
-See [Project Architecture](docs/Architecture.md) for the current local runtime architecture.
+See [Project Documentation](docs/README.md) for the current architecture, backend API, domain logic, request flows, and operations notes.
 
 
 # Workflow
