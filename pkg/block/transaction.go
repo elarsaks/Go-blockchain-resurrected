@@ -111,16 +111,24 @@ func (bc *Blockchain) CreateTransaction(sender string, recipient string, message
 				Signature:                  &signatureStr,
 				Value:                      &value,
 			}
-			m, _ := json.Marshal(bt)
-			buf := bytes.NewBuffer(m)
-			endpoint := fmt.Sprintf("%s/transactions", n)
-			client := &http.Client{}
-			req, _ := http.NewRequest("PUT", endpoint, buf)
-			resp, err := client.Do(req)
+			m, err := json.Marshal(bt)
 			if err != nil {
 				log.Printf("ERROR: %v", err)
 				return false, err
 			}
+			buf := bytes.NewBuffer(m)
+			endpoint := fmt.Sprintf("%s/transactions", n)
+			req, err := http.NewRequest("PUT", endpoint, buf)
+			if err != nil {
+				log.Printf("ERROR: %v", err)
+				return false, err
+			}
+			resp, err := peerHTTPClient.Do(req)
+			if err != nil {
+				log.Printf("ERROR: %v", err)
+				return false, err
+			}
+			_ = resp.Body.Close()
 			log.Printf("%v", resp)
 		}
 	}

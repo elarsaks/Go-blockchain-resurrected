@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strings"
 	"sync"
+	"time"
 )
 
 // ==============================
@@ -23,6 +24,8 @@ type Blockchain struct {
 	neighbors         []string
 	muxNeighbors      sync.Mutex
 }
+
+var peerHTTPClient = &http.Client{Timeout: 5 * time.Second}
 
 // NewBlockchain creates a new instance of Blockchain.
 func NewBlockchain(blockchainAddress string, port uint16) *Blockchain {
@@ -53,9 +56,17 @@ func (bc *Blockchain) CreateBlock(nonce int, previousHash [32]byte) *Block {
 	bc.transactionPool = []*Transaction{}
 	for _, n := range bc.neighbors {
 		endpoint := fmt.Sprintf("http://%s/transactions", n)
-		client := &http.Client{}
-		req, _ := http.NewRequest("DELETE", endpoint, nil)
-		resp, _ := client.Do(req)
+		req, err := http.NewRequest("DELETE", endpoint, nil)
+		if err != nil {
+			log.Printf("ERROR: create delete transactions request: %v", err)
+			continue
+		}
+		resp, err := peerHTTPClient.Do(req)
+		if err != nil {
+			log.Printf("ERROR: delete neighbor transactions: %v", err)
+			continue
+		}
+		_ = resp.Body.Close()
 		log.Printf("%v", resp)
 	}
 	return b
