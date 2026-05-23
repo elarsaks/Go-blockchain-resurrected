@@ -46,7 +46,7 @@ func (bc *Blockchain) AddTransaction(sender string,
 	s *utils.Signature) (bool, error) {
 
 	// Create a new transaction
-	t := NewTransaction(message, recipient, sender, value)
+	t := NewTransaction(sender, recipient, message, value)
 
 	// If the sender is the mining address, add the transaction to the pool and return true
 	if sender == MINING_SENDER {
@@ -144,7 +144,7 @@ func (bc *Blockchain) CopyTransactionPool() []*Transaction {
 
 // NewTransaction creates a new transaction.
 func NewTransaction(sender string, recipient string, message string, value float32) *Transaction {
-	return &Transaction{sender, recipient, message, value}
+	return &Transaction{message, recipient, sender, value}
 }
 
 // Get the transaction pool the Blockchain
