@@ -45,7 +45,6 @@ func (bc *Blockchain) Chain() []*Block {
 // Run initializes and runs the Blockchain.
 func (bc *Blockchain) Run() {
 	bc.StartSyncNeighbors()
-	bc.ResolveConflicts()
 	bc.StartMining() // Start mining automatically
 }
 
