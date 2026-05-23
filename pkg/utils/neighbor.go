@@ -20,12 +20,12 @@ func IsFoundHost(host string, port uint16) bool {
 	return true
 }
 
-var PATTERN = regexp.MustCompile(`((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?\.){3})(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)`)
+var ipv4Pattern = regexp.MustCompile(`((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?\.){3})(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)`)
 
 func FindNeighbors(myHost string, myPort uint16, startIp uint8, endIp uint8, startPort uint16, endPort uint16) []string {
-	address := fmt.Sprintf("%s:%d", myHost, myPort)
+	address := net.JoinHostPort(myHost, strconv.Itoa(int(myPort)))
 
-	m := PATTERN.FindStringSubmatch(myHost)
+	m := ipv4Pattern.FindStringSubmatch(myHost)
 	if m == nil {
 		return nil
 	}
@@ -36,7 +36,7 @@ func FindNeighbors(myHost string, myPort uint16, startIp uint8, endIp uint8, sta
 	for port := startPort; port <= endPort; port += 1 {
 		for ip := startIp; ip <= endIp; ip += 1 {
 			guessHost := fmt.Sprintf("%s%d", prefixHost, lastIp+int(ip))
-			guessTarget := fmt.Sprintf("%s:%d", guessHost, port)
+			guessTarget := net.JoinHostPort(guessHost, strconv.Itoa(int(port)))
 			if guessTarget != address && IsFoundHost(guessHost, port) {
 				neighbors = append(neighbors, guessTarget)
 			}
