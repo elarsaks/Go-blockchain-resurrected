@@ -78,21 +78,17 @@ func (bc *Blockchain) StartMining() {
 
 // ValidProof validates the proof of work.
 func (bc *Blockchain) ValidProof(nonce int, previousHash [32]byte, transactions []*Transaction, difficulty int) bool {
-	// Log out the parameters
-	// #debug
-	//log.Printf("nonce=%v, previousHash=%v, difficulty=%v", nonce, previousHash, difficulty)
-	// Log prevoius hash as string
-	// #debug
-	// log.Printf("previousHash=%x", previousHash)
-
+	if difficulty < 0 {
+		return false
+	}
 	zeros := strings.Repeat("0", difficulty)
 	guessBlock := Block{0, nonce, previousHash, transactions}
 	guessHashStr := fmt.Sprintf("%x", guessBlock.Hash())
+	if difficulty > len(guessHashStr) {
+		return false
+	}
 
-	//* DEBUG #Consensus
-	log.Println("VALID PROOF: ", guessHashStr[:difficulty] == zeros)
-
-	return true // guessHashStr[:difficulty] == zeros
+	return guessHashStr[:difficulty] == zeros
 }
 
 // ProofOfWork finds the proof of work.
