@@ -84,6 +84,11 @@ func (b *Block) Hash() [32]byte {
 
 // MarshalJSON customizes the JSON encoding of the block.
 func (b *Block) MarshalJSON() ([]byte, error) {
+	transactions := b.transactions
+	if transactions == nil {
+		transactions = []*Transaction{}
+	}
+
 	return json.Marshal(struct {
 		Timestamp    int64          `json:"timestamp"`
 		Nonce        int            `json:"nonce"`
@@ -93,7 +98,7 @@ func (b *Block) MarshalJSON() ([]byte, error) {
 		Timestamp:    b.timestamp,
 		Nonce:        b.nonce,
 		PreviousHash: fmt.Sprintf("%x", b.previousHash),
-		Transactions: b.transactions,
+		Transactions: transactions,
 	})
 }
 
@@ -117,9 +122,6 @@ func (b *Block) UnmarshalJSON(data []byte) error {
 	if v.PreviousHash == nil {
 		return fmt.Errorf("block previousHash is required")
 	}
-	if v.Transactions == nil {
-		return fmt.Errorf("block transactions are required")
-	}
 	ph, err := hex.DecodeString(*v.PreviousHash)
 	if err != nil {
 		return fmt.Errorf("decode previousHash: %w", err)
@@ -129,7 +131,11 @@ func (b *Block) UnmarshalJSON(data []byte) error {
 	}
 	b.timestamp = *v.Timestamp
 	b.nonce = *v.Nonce
-	b.transactions = *v.Transactions
+	if v.Transactions == nil {
+		b.transactions = []*Transaction{}
+	} else {
+		b.transactions = *v.Transactions
+	}
 	copy(b.previousHash[:], ph[:32])
 	return nil
 }
