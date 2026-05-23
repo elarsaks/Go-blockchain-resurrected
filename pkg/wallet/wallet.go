@@ -39,9 +39,21 @@ type TransactionRequest struct {
 }
 
 func NewWallet() *Wallet {
+	w, err := NewWalletWithError()
+	if err != nil {
+		log.Printf("ERROR: create wallet: %v", err)
+		return nil
+	}
+	return w
+}
+
+func NewWalletWithError() (*Wallet, error) {
 	// 1. Creating ECDSA private key (32 bytes) public key (64 bytes)
 	w := new(Wallet)
-	privateKey, _ := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	privateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+		return nil, fmt.Errorf("generate private key: %w", err)
+	}
 	w.privateKey = privateKey
 	w.publicKey = &w.privateKey.PublicKey
 	// 2. Perform SHA-256 hashing on the public key (32 bytes).
@@ -74,7 +86,7 @@ func NewWallet() *Wallet {
 	// 9. Convert the result from a byte string into base58.
 	address := base58.Encode(dc8)
 	w.blockchainAddress = address
-	return w
+	return w, nil
 }
 
 // PrivateKey returns the ECDSA private key of the wallet.
@@ -128,17 +140,32 @@ func NewTransaction(
 
 // GenerateSignature generates the signature for the transaction.
 func (t *Transaction) GenerateSignature() *utils.Signature {
-	m, _ := json.Marshal(t)
+	signature, err := t.GenerateSignatureWithError()
+	if err != nil {
+		log.Printf("ERROR: generate signature: %v", err)
+		return nil
+	}
+	return signature
+}
+
+func (t *Transaction) GenerateSignatureWithError() (*utils.Signature, error) {
+	if t.senderPrivateKey == nil {
+		return nil, fmt.Errorf("sender private key is required")
+	}
+
+	m, err := json.Marshal(t)
+	if err != nil {
+		return nil, fmt.Errorf("marshal transaction: %w", err)
+	}
 
 	log.Println("Generate signature", string(m))
 
 	h := sha256.Sum256([]byte(m))
 	r, s, err := ecdsa.Sign(rand.Reader, t.senderPrivateKey, h[:])
 	if err != nil {
-		fmt.Println("Signing signature failed: ", err)
-		return nil // TODO: Handle error
+		return nil, fmt.Errorf("sign transaction: %w", err)
 	}
-	return &utils.Signature{R: r, S: s}
+	return &utils.Signature{R: r, S: s}, nil
 }
 
 // MarshalJSON returns the JSON representation of the transaction.
