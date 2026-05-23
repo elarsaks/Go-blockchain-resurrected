@@ -112,13 +112,13 @@ const Wallet: React.FC<WalletProps> = ({ type }) => {
     setIsSendDisabled(
       isMissingRequiredField ||
         !isValidTransferAmount(wallet.details.amount, wallet.details.balance) ||
-        wallet.details.util.isActive
+        wallet.details.util.isActive,
     );
   }, [wallet.details]);
 
   // Event Handlers
   const handleInputChange = (
-    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     const { name, value } = event.target;
 
@@ -143,7 +143,7 @@ const Wallet: React.FC<WalletProps> = ({ type }) => {
       senderPublicKey: wallet.details.publicKey,
       value: wallet.details.amount,
     })
-      .then((response) => {
+      .then(() => {
         walletContext.setMinerWalletUtil({
           isActive: true,
           type: "success",
@@ -200,9 +200,7 @@ const Wallet: React.FC<WalletProps> = ({ type }) => {
         </Field>
 
         <Field>
-          <Label>
-            {type === "Miner" ? "Miner " : "User"} Blockchain Address{" "}
-          </Label>
+          <Label>{type === "Miner" ? "Miner " : "User"} Blockchain Address </Label>
           <TextArea
             rows={2}
             name="blockchainAddress"
@@ -217,9 +215,7 @@ const Wallet: React.FC<WalletProps> = ({ type }) => {
             rows={2}
             name="recipientAddress"
             placeholder={
-              type === "Miner"
-                ? "User Blockchain Address"
-                : "Miner Blockchain Address"
+              type === "Miner" ? "User Blockchain Address" : "Miner Blockchain Address"
             }
             value={wallet.details.recipientAddress}
             onChange={handleInputChange}
@@ -248,11 +244,7 @@ const Wallet: React.FC<WalletProps> = ({ type }) => {
           />
         )}
 
-        <SendButton
-          type="submit"
-          disabled={isSendDisabled}
-          onClick={sendCrypto}
-        >
+        <SendButton type="submit" disabled={isSendDisabled} onClick={sendCrypto}>
           Send crypto
         </SendButton>
       </Form>

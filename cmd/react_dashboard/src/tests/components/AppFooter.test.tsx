@@ -12,20 +12,20 @@ describe("AppFooter", () => {
         githubUrl="https://github.com/example"
         linkedinUrl="https://linkedin.com/in/example"
         websiteUrl="https://example.com"
-      />
+      />,
     );
 
     expect(screen.getByRole("link", { name: "GitHub" })).toHaveAttribute(
       "href",
-      "https://github.com/example"
+      "https://github.com/example",
     );
     expect(screen.getByRole("link", { name: "LinkedIn" })).toHaveAttribute(
       "rel",
-      "noopener noreferrer"
+      "noopener noreferrer",
     );
     expect(screen.getByRole("link", { name: "Website" })).toHaveAttribute(
       "target",
-      "_blank"
+      "_blank",
     );
   });
 });

@@ -32,12 +32,7 @@ export default defineConfig({
       all: true,
       reporter: ["text", "lcov"],
       include: ["src/**/*.{ts,tsx}"],
-      exclude: [
-        "src/tests/**",
-        "src/types.d.ts",
-        "src/index.tsx",
-        "src/assets/**",
-      ],
+      exclude: ["src/tests/**", "src/types.d.ts", "src/index.tsx", "src/assets/**"],
     },
   },
 });

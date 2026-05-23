@@ -16,7 +16,7 @@ function fetchUserWalletDetails(signal?: AbortSignal): Promise<WalletDetails> {
 
 function fetchWalletBalance(
   blockchainAddress: string,
-  signal?: AbortSignal
+  signal?: AbortSignal,
 ): Promise<number> {
   return apiClient
     .get<BalanceResponse>("/wallet/balance", {
@@ -31,10 +31,10 @@ function fetchWalletBalance(
     });
 }
 
-function transaction(transaction: Transaction): Promise<any> {
+function transaction(transaction: Transaction): Promise<TransactionResponse> {
   // Why this string ends up in golang as a number is beyond me
   return apiClient
-    .post<any>("/transaction", transaction)
+    .post<TransactionResponse>("/transaction", transaction)
     .then(({ data }) => data);
 }
 

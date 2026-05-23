@@ -23,6 +23,11 @@ type Transaction = {
   value: string;
 };
 
+type TransactionResponse = {
+  error?: string;
+  message?: string;
+};
+
 type MiningContextType = {
   mining: boolean;
   setMining: React.Dispatch<React.SetStateAction<boolean>>;

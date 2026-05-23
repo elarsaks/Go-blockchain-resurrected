@@ -1,4 +1,5 @@
 import axios from "axios";
+import type { InternalAxiosRequestConfig } from "axios";
 import { describe, expect, it } from "vitest";
 import { getApiErrorMessage } from "api/client";
 
@@ -14,8 +15,8 @@ describe("getApiErrorMessage", () => {
         status: 400,
         statusText: "Bad Request",
         headers: {},
-        config: {} as any,
-      }
+        config: {} as InternalAxiosRequestConfig,
+      },
     );
 
     expect(getApiErrorMessage(error)).toBe("Not enough balance");
@@ -32,8 +33,8 @@ describe("getApiErrorMessage", () => {
         status: 404,
         statusText: "Not Found",
         headers: {},
-        config: {} as any,
-      }
+        config: {} as InternalAxiosRequestConfig,
+      },
     );
 
     expect(getApiErrorMessage(apiError)).toBe("Address not found");

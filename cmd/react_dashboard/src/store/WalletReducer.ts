@@ -1,7 +1,4 @@
-const walletReducer = (
-  state: StoreWallet,
-  action: WalletAction
-): StoreWallet => {
+const walletReducer = (state: StoreWallet, action: WalletAction): StoreWallet => {
   switch (action.type) {
     case "SET_WALLET":
       return {

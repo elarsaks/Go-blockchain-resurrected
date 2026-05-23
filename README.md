@@ -13,6 +13,7 @@ This project is currently maintained as a local development blockchain playgroun
    - [Run Wallet Server as Standalone](#run-wallet-server-as-standalone)
    - [Run Miner / Node as Standalone](#run-miner--node-as-standalone)
    - [Run End-to-End Transfer Test](#run-end-to-end-transfer-test)
+5. [Quality Checks](#quality-checks)
 
 # About
 This project is a Docker-based blockchain application that is currently under development. It is written in Golang and features a user interface built in React. The application is composed of several key components, each serving a unique role in the overall functionality of the system.
@@ -76,6 +77,35 @@ To verify the Docker stack, wallet creation, transaction submission, mining, and
 ```
 
 The test starts the Docker stack, creates a miner wallet and user wallet through the wallet server, sends `1` coin from the miner wallet to the user wallet, waits until the transfer is mined, and then stops the stack.
+
+---
+<br></br>
+## Quality Checks
+
+Pull requests run automated quality checks for both the Go services and the React dashboard.
+
+**Go checks:**
+```bash
+gofmt -w $(find . -path './cmd/react_dashboard/node_modules' -prune -o -name '*.go' -print)
+go list ./... | grep -v '/cmd/react_dashboard/node_modules/' | xargs go vet
+go list ./... | grep -v '/cmd/react_dashboard/node_modules/' | xargs go test
+```
+
+**React dashboard checks:**
+```bash
+cd cmd/react_dashboard
+npm run format:check
+npm run lint
+npm run test:coverage
+npx tsc --noEmit
+npm run build
+```
+
+To apply dashboard formatting locally:
+```bash
+cd cmd/react_dashboard
+npm run format
+```
 
 ---
 <br></br>

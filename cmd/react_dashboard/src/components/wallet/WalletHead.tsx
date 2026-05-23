@@ -66,10 +66,7 @@ const WalletHead: React.FC<WalletHeadProps> = ({
       ) : (
         <TitleRow>
           <MinerTitleContainer>
-            <TypeSelect
-              value={selectedMinerId}
-              onChange={handleMinerChange}
-            >
+            <TypeSelect value={selectedMinerId} onChange={handleMinerChange}>
               {miners.map((miner) => (
                 <option key={miner.value} value={miner.value}>
                   {miner.text}

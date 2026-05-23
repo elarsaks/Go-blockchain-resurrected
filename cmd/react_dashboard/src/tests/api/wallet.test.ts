@@ -1,10 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { apiClient } from "api/client";
-import {
-  fetchUserWalletDetails,
-  fetchWalletBalance,
-  transaction,
-} from "api/wallet";
+import { fetchUserWalletDetails, fetchWalletBalance, transaction } from "api/wallet";
 
 describe("wallet api", () => {
   afterEach(() => {
@@ -38,7 +34,7 @@ describe("wallet api", () => {
 
     await expect(fetchWalletBalance("wallet-address")).resolves.toBe(3);
     await expect(fetchWalletBalance("missing-address")).rejects.toThrow(
-      "Address missing"
+      "Address missing",
     );
     expect(get).toHaveBeenCalledWith("/wallet/balance", {
       params: { blockchainAddress: "wallet-address" },

@@ -34,7 +34,7 @@ func (bc *Blockchain) SetNeighbors() {
 	//log.Printf("%v", bc.neighbors)
 }
 
-//* This is a debug method, until blockchain broadcasting is implemented
+// * This is a debug method, until blockchain broadcasting is implemented
 // filterOutSelfPort removes neighbors with the same port as the current instance
 func filterOutSelfPort(neighbors []string, port string) []string {
 	var filtered []string
