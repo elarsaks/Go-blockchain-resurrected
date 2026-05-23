@@ -13,7 +13,7 @@ function fetchBlockchainData(signal?: AbortSignal): Promise<Block[]> {
 // Fetch miner wallet details
 function fetchMinerWalletDetails(
   minerId: string,
-  signal?: AbortSignal
+  signal?: AbortSignal,
 ): Promise<WalletDetails> {
   return apiClient
     .post<WalletDetailsResponse>("/miner/wallet", null, {

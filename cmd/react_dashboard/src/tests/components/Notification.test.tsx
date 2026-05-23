@@ -12,7 +12,7 @@ describe("Notification", () => {
         type="info"
         message="Fetching blockchain data..."
         insideContainer={false}
-      />
+      />,
     );
 
     expect(screen.getByText("Fetching blockchain data...")).toBeInTheDocument();
@@ -21,7 +21,7 @@ describe("Notification", () => {
 
   it("does not render empty notifications", () => {
     const { container } = render(
-      <Notification type="success" message="" insideContainer={true} />
+      <Notification type="success" message="" insideContainer={true} />,
     );
 
     expect(container).toBeEmptyDOMElement();

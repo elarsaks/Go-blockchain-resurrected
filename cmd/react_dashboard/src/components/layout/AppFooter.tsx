@@ -27,11 +27,7 @@ type FooterProps = {
   websiteUrl: string;
 };
 
-const Footer: React.FC<FooterProps> = ({
-  githubUrl,
-  linkedinUrl,
-  websiteUrl,
-}) => (
+const Footer: React.FC<FooterProps> = ({ githubUrl, linkedinUrl, websiteUrl }) => (
   <FooterContainer>
     <Link href={githubUrl} target="_blank" rel="noopener noreferrer">
       GitHub

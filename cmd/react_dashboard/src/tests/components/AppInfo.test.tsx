@@ -12,11 +12,11 @@ describe("AppInfo", () => {
     render(<AppInfo />);
 
     expect(
-      screen.getByText(/wallet on the left represents a miner/i)
+      screen.getByText(/wallet on the left represents a miner/i),
     ).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "GitHub" })).toHaveAttribute(
       "href",
-      "https://github.com/elarsaks/Go-blockchain-resurrected"
+      "https://github.com/elarsaks/Go-blockchain-resurrected",
     );
   });
 
@@ -27,7 +27,7 @@ describe("AppInfo", () => {
     fireEvent(window, new Event("resize"));
 
     expect(
-      screen.getByText(/wallet on the up represents a miner/i)
+      screen.getByText(/wallet on the up represents a miner/i),
     ).toBeInTheDocument();
   });
 });

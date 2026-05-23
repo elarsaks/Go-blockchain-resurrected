@@ -125,7 +125,7 @@ function App() {
         )}
 
         {!utilState.isActive &&
-          blockchain.map((block, index) => (
+          blockchain.map((block) => (
             <React.Fragment key={`${block.timestamp}-${block.previousHash}`}>
               <Loader height={100} />
               <BlockDiv block={block} />

@@ -22,7 +22,7 @@ describe("WalletHead", () => {
         walletDetails={walletDetails}
         selectedMinerId="1"
         onMinerChange={vi.fn()}
-      />
+      />,
     );
 
     expect(screen.getByRole("heading", { name: "User Wallet" })).toBeVisible();
@@ -38,7 +38,7 @@ describe("WalletHead", () => {
         walletDetails={walletDetails}
         selectedMinerId="1"
         onMinerChange={onMinerChange}
-      />
+      />,
     );
 
     fireEvent.change(screen.getByRole("combobox"), {

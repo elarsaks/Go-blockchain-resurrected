@@ -42,8 +42,6 @@ describe("BlockDiv", () => {
   it("shows a genesis block message when there are no transactions", () => {
     render(<BlockDiv block={{ ...blockWithTransaction, transactions: [] }} />);
 
-    expect(
-      screen.getByText("No transactions (genesis block).")
-    ).toBeInTheDocument();
+    expect(screen.getByText("No transactions (genesis block).")).toBeInTheDocument();
   });
 });

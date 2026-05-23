@@ -1,0 +1,51 @@
+name: Go Quality
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/go-quality.yml"
+      - "**/*.go"
+      - "go.mod"
+      - "go.sum"
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/go-quality.yml"
+      - "**/*.go"
+      - "go.mod"
+      - "go.sum"
+
+concurrency:
+  group: go-quality-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  go-quality:
+    name: go-quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Check formatting
+        run: |
+          unformatted="$(gofmt -l $(find . -path './cmd/react_dashboard/node_modules' -prune -o -name '*.go' -print))"
+          if [ -n "$unformatted" ]; then
+            echo "$unformatted"
+            exit 1
+          fi
+
+      - name: Vet
+        run: go list ./... | grep -v '/cmd/react_dashboard/node_modules/' | xargs go vet
+
+      - name: Test
+        run: go list ./... | grep -v '/cmd/react_dashboard/node_modules/' | xargs go test

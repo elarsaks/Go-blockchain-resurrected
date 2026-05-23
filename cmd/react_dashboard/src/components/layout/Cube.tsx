@@ -19,12 +19,7 @@ const Cube: React.FC = () => {
     if (!currentRef) return;
 
     const scene = new Scene();
-    const camera = new PerspectiveCamera(
-      75,
-      currentRef.clientWidth / 75,
-      0.1,
-      1000
-    );
+    const camera = new PerspectiveCamera(75, currentRef.clientWidth / 75, 0.1, 1000);
 
     const renderer = new WebGLRenderer({ alpha: true });
     renderer.setSize(currentRef.clientWidth, 75);

@@ -1,7 +1,6 @@
 import axios from "axios";
 
-const gatewayApiUrl =
-  import.meta.env.VITE_GATEWAY_API_URL || "http://localhost:5000";
+const gatewayApiUrl = import.meta.env.VITE_GATEWAY_API_URL || "http://localhost:5000";
 
 const apiClient = axios.create({
   baseURL: gatewayApiUrl,

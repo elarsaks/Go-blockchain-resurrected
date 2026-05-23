@@ -59,18 +59,17 @@ const AppInfo: React.FC = () => {
     <AppInfoWrapper>
       <h3> This is a simple example of a blockchain.</h3>
       <p>
-        The wallet on the {isMobile ? "up" : "left"} represents a miner, while
-        the wallet on the {isMobile ? "down" : "right"} represents a random
-        user. Miner wallets accumulate crypto when they mine blocks. At first,
-        they mine 10 blocks, and then they mine 1 block only if there are
-        transactions to be mined.
+        The wallet on the {isMobile ? "up" : "left"} represents a miner, while the
+        wallet on the {isMobile ? "down" : "right"} represents a random user. Miner
+        wallets accumulate crypto when they mine blocks. At first, they mine 10 blocks,
+        and then they mine 1 block only if there are transactions to be mined.
       </p>
       <p>
-        You can experiment by sending this crypto from miners to users and vice
-        versa. Just copy and paste the wallet address from one wallet to the
-        other wallets recipient input.
+        You can experiment by sending this crypto from miners to users and vice versa.
+        Just copy and paste the wallet address from one wallet to the other wallets
+        recipient input.
       </p>
-      <p>Beneath the wallets, you'll find the 10 most recently mined blocks.</p>
+      <p>Beneath the wallets, you&apos;ll find the 10 most recently mined blocks.</p>
       <br />
       <p>
         <b>

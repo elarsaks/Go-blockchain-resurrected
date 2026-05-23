@@ -16,7 +16,7 @@ describe("UtilReducer", () => {
           type: "error",
           message: "Failed to fetch blockchain data",
         },
-      })
+      }),
     ).toEqual({
       isActive: true,
       type: "error",
@@ -35,7 +35,7 @@ describe("UtilReducer", () => {
       utilReducer(activeState, {
         type: "OFF",
         payload: null,
-      })
+      }),
     ).toEqual({
       isActive: false,
       type: "success",
