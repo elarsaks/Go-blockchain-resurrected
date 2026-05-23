@@ -123,7 +123,7 @@ func NewTransaction(
 	privateKey *ecdsa.PrivateKey,
 	publicKey *ecdsa.PublicKey,
 	value float32) *Transaction {
-	return &Transaction{message, sender, recipient, privateKey, publicKey, value}
+	return &Transaction{message, recipient, sender, privateKey, publicKey, value}
 }
 
 // GenerateSignature generates the signature for the transaction.
@@ -145,13 +145,13 @@ func (t *Transaction) GenerateSignature() *utils.Signature {
 func (t *Transaction) MarshalJSON() ([]byte, error) {
 	return json.Marshal(struct {
 		Message   string  `json:"message"`
-		Sender    string  `json:"recipientBlockchainAddress"`
-		Recipient string  `json:"senderBlockchainAddress"`
+		Recipient string  `json:"recipientBlockchainAddress"`
+		Sender    string  `json:"senderBlockchainAddress"`
 		Value     float32 `json:"value"`
 	}{
 		Message:   t.message,
-		Sender:    t.senderBlockchainAddress,
 		Recipient: t.recipientBlockchainAddress,
+		Sender:    t.senderBlockchainAddress,
 		Value:     t.value,
 	})
 }
