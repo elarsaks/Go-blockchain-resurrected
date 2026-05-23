@@ -216,19 +216,30 @@ func (t *Transaction) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements the Unmarshaler interface for the Transaction type.
 func (t *Transaction) UnmarshalJSON(data []byte) error {
-	v := &struct {
+	var v struct {
 		Message   *string  `json:"message"`
 		Recipient *string  `json:"recipientBlockchainAddress"`
 		Sender    *string  `json:"senderBlockchainAddress"`
 		Value     *float32 `json:"value"`
-	}{
-		Message:   &t.message,
-		Recipient: &t.recipientBlockchainAddress,
-		Sender:    &t.senderBlockchainAddress,
-		Value:     &t.value,
 	}
 	if err := json.Unmarshal(data, &v); err != nil {
 		return err
 	}
+	if v.Message == nil {
+		return fmt.Errorf("transaction message is required")
+	}
+	if v.Recipient == nil {
+		return fmt.Errorf("transaction recipientBlockchainAddress is required")
+	}
+	if v.Sender == nil {
+		return fmt.Errorf("transaction senderBlockchainAddress is required")
+	}
+	if v.Value == nil {
+		return fmt.Errorf("transaction value is required")
+	}
+	t.message = *v.Message
+	t.recipientBlockchainAddress = *v.Recipient
+	t.senderBlockchainAddress = *v.Sender
+	t.value = *v.Value
 	return nil
 }
