@@ -3,9 +3,11 @@ package main
 import (
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/elarsaks/Go-blockchain/cmd/wallet_server/handlers"
 	"github.com/elarsaks/Go-blockchain/pkg/utils"
@@ -40,14 +42,28 @@ func (ws *WalletServer) MinerGateway(minerID string) (string, error) {
 
 	switch minerID {
 	case "1":
-		return fmt.Sprintf("http://%s:5001", host), nil
+		return fmt.Sprintf("http://%s:5001", minerHost(host, minerID)), nil
 	case "2":
-		return fmt.Sprintf("http://%s:5002", host), nil
+		return fmt.Sprintf("http://%s:5002", minerHost(host, minerID)), nil
 	case "3":
-		return fmt.Sprintf("http://%s:5003", host), nil
+		return fmt.Sprintf("http://%s:5003", minerHost(host, minerID)), nil
 	default:
 		return "", fmt.Errorf("invalid miner_id %q", minerID)
 	}
+}
+
+func minerHost(host string, minerID string) string {
+	if host == "localhost" || net.ParseIP(host) != nil {
+		return host
+	}
+
+	for _, suffix := range []string{"-1", "-2", "-3"} {
+		if strings.HasSuffix(host, suffix) {
+			return strings.TrimSuffix(host, suffix) + "-" + minerID
+		}
+	}
+
+	return host + "-" + minerID
 }
 
 func NewWalletServer(port uint16, gateway string) *WalletServer {
@@ -59,6 +75,9 @@ func (ws *WalletServer) Run() {
 	// Create router
 	router := mux.NewRouter()
 	router.Use(utils.CorsMiddleware())
+	router.PathPrefix("/").Methods(http.MethodOptions).HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+	})
 
 	// Create an instance of WalletServerHandler
 	handler := handlers.NewWalletServerHandler(ws)

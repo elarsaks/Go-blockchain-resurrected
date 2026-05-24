@@ -237,6 +237,9 @@ func (bc *Blockchain) CalculateTotalBalance(blockchainAddress string) (float32, 
 	}
 
 	if !addressFound {
+		if blockchainAddress == bc.blockchainAddress {
+			return 0.0, nil
+		}
 		return 0.0, fmt.Errorf("Address not found in the Blockchain")
 	}
 

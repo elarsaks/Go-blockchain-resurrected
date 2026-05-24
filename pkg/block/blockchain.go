@@ -32,6 +32,9 @@ func NewBlockchain(blockchainAddress string, port uint16) *Blockchain {
 	b := &Block{}
 	bc := new(Blockchain)
 	bc.blockchainAddress = blockchainAddress
+	bc.transactionPool = []*Transaction{
+		NewTransaction(MINING_SENDER, blockchainAddress, "REGISTER MINER WALLET", 0),
+	}
 	bc.CreateBlock(0, b.Hash())
 	bc.port = port
 	return bc

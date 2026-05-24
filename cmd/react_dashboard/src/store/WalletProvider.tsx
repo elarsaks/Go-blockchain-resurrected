@@ -53,7 +53,6 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({
   const walletRequestIdRef = useRef(0);
   const minerBalanceRequestIdRef = useRef(0);
   const userBalanceRequestIdRef = useRef(0);
-  const didLoadWalletsRef = useRef(false);
   const walletRequestAbortRef = useRef<AbortController | null>(null);
   const minerBalanceAbortRef = useRef<AbortController | null>(null);
   const userBalanceAbortRef = useRef<AbortController | null>(null);
@@ -96,26 +95,6 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({
     }
   }
 
-  const setWalletSetupError = useCallback((message: string) => {
-    dispatchUserWallet({
-      type: "SET_WALLET_UTIL",
-      payload: {
-        isActive: true,
-        type: "error",
-        message,
-      },
-    });
-
-    dispatchMinerWallet({
-      type: "SET_WALLET_UTIL",
-      payload: {
-        isActive: true,
-        type: "error",
-        message,
-      },
-    });
-  }, []);
-
   const loadWallets = useCallback(
     (minerId: string) => {
       const requestId = walletRequestIdRef.current + 1;
@@ -145,41 +124,95 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({
         },
       });
 
-      Promise.all([
-        fetchMinerWalletDetails(minerId, signal),
-        fetchUserWalletDetails(minerId, signal),
-      ])
-        .then(([minerDetails, userDetails]) => {
+      let loadedMinerDetails: WalletDetails | null = null;
+      let loadedUserDetails: WalletDetails | null = null;
+
+      const syncRecipientAddresses = () => {
+        if (!loadedMinerDetails || !loadedUserDetails) return;
+        if (requestId !== walletRequestIdRef.current) return;
+
+        dispatchMinerWallet({
+          type: "SET_WALLET",
+          payload: {
+            recipientAddress: loadedUserDetails.blockchainAddress,
+          },
+        });
+
+        dispatchUserWallet({
+          type: "SET_WALLET",
+          payload: {
+            recipientAddress: loadedMinerDetails.blockchainAddress,
+          },
+        });
+      };
+
+      fetchMinerWalletDetails(minerId, signal)
+        .then((minerDetails) => {
           if (requestId !== walletRequestIdRef.current) return;
+          loadedMinerDetails = minerDetails;
 
           dispatchMinerWallet({
             type: "SET_WALLET",
             payload: {
               ...minerDetails,
               amount: "1",
-              recipientAddress: userDetails.blockchainAddress,
-            },
-          });
-
-          dispatchUserWallet({
-            type: "SET_WALLET",
-            payload: {
-              ...userDetails,
-              recipientAddress: minerDetails.blockchainAddress,
             },
           });
 
           clearLoader("Miner");
-          clearLoader("User");
+          syncRecipientAddresses();
         })
         .catch((error) => {
           if (isApiRequestCanceled(error)) return;
           if (requestId !== walletRequestIdRef.current) return;
 
-          setWalletSetupError("Failed to initialize wallets");
+          dispatchUserWallet({
+            type: "SET_WALLET_UTIL",
+            payload: {
+              isActive: true,
+              type: "error",
+              message: "Failed to fetch miner wallet details",
+            },
+          });
+
+          dispatchMinerWallet({
+            type: "SET_WALLET_UTIL",
+            payload: {
+              isActive: true,
+              type: "error",
+              message: "Failed to fetch miner wallet details",
+            },
+          });
+        });
+
+      fetchUserWalletDetails(minerId, signal)
+        .then((userDetails) => {
+          if (requestId !== walletRequestIdRef.current) return;
+          loadedUserDetails = userDetails;
+
+          dispatchUserWallet({
+            type: "SET_WALLET",
+            payload: userDetails,
+          });
+
+          clearLoader("User");
+          syncRecipientAddresses();
+        })
+        .catch((error) => {
+          if (isApiRequestCanceled(error)) return;
+          if (requestId !== walletRequestIdRef.current) return;
+
+          dispatchUserWallet({
+            type: "SET_WALLET_UTIL",
+            payload: {
+              isActive: true,
+              type: "error",
+              message: "Failed to register user wallet",
+            },
+          });
         });
     },
-    [setWalletSetupError, startRequest],
+    [startRequest],
   );
 
   const selectMiner = useCallback(
@@ -305,8 +338,6 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({
 
   // Fetch wallet details
   useEffect(() => {
-    if (didLoadWalletsRef.current) return;
-    didLoadWalletsRef.current = true;
     loadWallets(selectedMinerId);
   }, [loadWallets, selectedMinerId]);
 
