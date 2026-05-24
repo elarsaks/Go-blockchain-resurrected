@@ -67,6 +67,20 @@ func TestPrivateKeyFromStringRoundTrip(t *testing.T) {
 	}
 }
 
+func TestPrivateKeyFromStringAcceptsOddLengthHex(t *testing.T) {
+	publicKey := &ecdsa.PublicKey{
+		Curve: elliptic.P256(),
+		X:     big.NewInt(1),
+		Y:     big.NewInt(2),
+	}
+
+	decoded := PrivateKeyFromString("abc", publicKey)
+
+	if decoded.D.Cmp(big.NewInt(0xabc)) != 0 {
+		t.Fatalf("D = %s, want %d", decoded.D, 0xabc)
+	}
+}
+
 func publicKeyString(publicKey *ecdsa.PublicKey) string {
 	return (&Signature{R: publicKey.X, S: publicKey.Y}).String()
 }
