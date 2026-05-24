@@ -54,6 +54,9 @@ func PublicKeyFromString(s string) *ecdsa.PublicKey {
 
 // Create a private key from a string.
 func PrivateKeyFromString(s string, publicKey *ecdsa.PublicKey) *ecdsa.PrivateKey {
+	if len(s)%2 != 0 {
+		s = "0" + s
+	}
 	b, _ := hex.DecodeString(s)
 	var bi big.Int
 	_ = bi.SetBytes(b)
