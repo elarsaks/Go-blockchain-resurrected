@@ -1,4 +1,4 @@
-FROM golang:1.18.0-alpine
+FROM golang:1.18.0-alpine AS builder
 
 WORKDIR /app
 
@@ -8,8 +8,12 @@ RUN go mod download
 
 COPY . .
 
-WORKDIR /app/cmd/wallet_server
+RUN CGO_ENABLED=0 go build -buildvcs=false -o /bin/wallet-server ./cmd/wallet_server
+
+FROM alpine:3.19
+
+COPY --from=builder /bin/wallet-server /bin/wallet-server
 
 EXPOSE 5000
 
-CMD ["go", "run", "-buildvcs=false", "."]
+CMD ["/bin/wallet-server"]
