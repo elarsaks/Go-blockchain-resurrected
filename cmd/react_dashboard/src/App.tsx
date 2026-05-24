@@ -41,6 +41,7 @@ const WalletWrapperContainer = styled.div`
 
 function App() {
   const [blockchain, setBlockchain] = useState<Block[]>([]);
+  const [selectedMinerId, setSelectedMinerId] = useState("1");
   const blockchainRequestRef = useRef<AbortController | null>(null);
   const [utilState, dispatchUtil] = React.useReducer(UtilReducer, {
     isActive: false,
@@ -67,7 +68,7 @@ function App() {
         });
       }
 
-      fetchBlockchainData(controller.signal)
+      fetchBlockchainData(selectedMinerId, controller.signal)
         .then((blocks) => {
           if (!isMounted) return;
 
@@ -100,7 +101,7 @@ function App() {
       blockchainRequestRef.current?.abort();
       clearInterval(intervalId);
     };
-  }, []);
+  }, [selectedMinerId]);
 
   return (
     <AppWrapper>
@@ -110,7 +111,11 @@ function App() {
         <AppInfo />
 
         <WalletWrapperContainer>
-          <WalletProvider previousHash={blockchain[0]?.previousHash}>
+          <WalletProvider
+            previousHash={blockchain[0]?.previousHash}
+            selectedMinerId={selectedMinerId}
+            onMinerSelect={setSelectedMinerId}
+          >
             <Wallet type="Miner" />
             <Wallet type="User" />
           </WalletProvider>

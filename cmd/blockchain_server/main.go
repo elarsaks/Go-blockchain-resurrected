@@ -54,8 +54,6 @@ func (bcs *BlockchainServer) GetBlockchain() *block.Blockchain {
 		// Setting the wallet in the BlockchainServer object
 		bcs.Wallet = minersWallet
 
-		log.Printf("privateKey %v", minersWallet.PrivateKeyStr())
-		log.Printf("publicKey %v", minersWallet.PublicKeyStr())
 		log.Printf("blockchainAddress %v", minersWallet.BlockchainAddress())
 
 	}
@@ -71,6 +69,9 @@ func (bcs *BlockchainServer) Run() {
 
 	router := mux.NewRouter()
 	router.Use(utils.CorsMiddleware())
+	router.PathPrefix("/").Methods(http.MethodOptions).HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+	})
 
 	handler := handlers.NewBlockchainServerHandler(bcs)
 

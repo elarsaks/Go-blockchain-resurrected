@@ -20,7 +20,7 @@ describe("miner api", () => {
 
     await expect(fetchBlockchainData()).resolves.toEqual(blocks);
     expect(get).toHaveBeenCalledWith("/miner/blocks", {
-      params: { amount: 10 },
+      params: { amount: 10, miner_id: "1" },
       signal: undefined,
     });
   });

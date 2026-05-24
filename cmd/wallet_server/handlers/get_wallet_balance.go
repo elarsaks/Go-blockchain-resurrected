@@ -2,40 +2,58 @@ package handlers
 
 import (
 	"encoding/json"
-	"fmt"
-	"io"
 	"log"
 	"net/http"
+	"net/url"
 
 	"github.com/elarsaks/Go-blockchain/pkg/block"
-	"github.com/elarsaks/Go-blockchain/pkg/utils"
 )
 
 func (h *WalletServerHandler) GetWalletBalance(w http.ResponseWriter, req *http.Request) {
 	// Check if the HTTP method is GET
 	if req.Method != http.MethodGet {
 		log.Println("ERROR: Invalid HTTP Method")
-		w.WriteHeader(http.StatusBadRequest)
+		writeJSONError(w, http.StatusMethodNotAllowed, "method not allowed")
 		return
 	}
 
 	// Extract the blockchain address from the URL query parameters
 	blockchainAddress := req.URL.Query().Get("blockchainAddress")
+	if blockchainAddress == "" {
+		writeJSONError(w, http.StatusBadRequest, "blockchainAddress is required")
+		return
+	}
+
+	gateway, err := h.gatewayForRequest(req)
+	if err != nil {
+		writeJSONError(w, http.StatusBadRequest, err.Error())
+		return
+	}
 
 	// Construct the endpoint URL for the blockchain API
-	endpoint := fmt.Sprintf("%s/balance?blockchainAddress=%s", h.server.Gateway(), blockchainAddress)
+	endpoint, err := url.Parse(gateway + "/balance")
+	if err != nil {
+		writeJSONError(w, http.StatusInternalServerError, "invalid miner gateway")
+		return
+	}
+	query := endpoint.Query()
+	query.Set("blockchainAddress", blockchainAddress)
+	endpoint.RawQuery = query.Encode()
+
+	minerReq, err := http.NewRequest(http.MethodGet, endpoint.String(), nil)
+	if err != nil {
+		writeJSONError(w, http.StatusInternalServerError, "failed to build balance request")
+		return
+	}
 
 	// Send a GET request to the blockchain API
-	resp, err := http.Get(endpoint)
+	resp, err := h.client.Do(minerReq)
 	if err != nil {
 		log.Printf("ERROR: %v", err)
-		io.WriteString(w, string(utils.JsonStatus("fails")))
+		writeJSONError(w, http.StatusBadGateway, "failed to reach miner")
 		return
 	}
 	defer resp.Body.Close()
-
-	// Set the response header to indicate JSON content type
-	w.Header().Set("Content-Type", "application/json")
 
 	// Check the response status code
 	if resp.StatusCode == http.StatusOK {
@@ -44,19 +62,16 @@ func (h *WalletServerHandler) GetWalletBalance(w http.ResponseWriter, req *http.
 		err := json.NewDecoder(resp.Body).Decode(br)
 		if err != nil {
 			log.Printf("ERROR: %v", err)
-			io.WriteString(w, string(utils.JsonStatus("fail")))
+			writeJSONError(w, http.StatusBadGateway, "invalid balance response")
 			return
 		}
 
-		// Marshal the response struct to JSON and write it as the response
-		m, _ := json.Marshal(br)
-		io.WriteString(w, string(m))
+		writeJSON(w, http.StatusOK, br)
 	} else {
 		// Create a new response struct for the failure case
 		failureResponse := &block.BalanceResponse{
 			Error: "Failed to get wallet balance",
 		}
-		m, _ := json.Marshal(failureResponse)
-		io.WriteString(w, string(m))
+		writeJSON(w, resp.StatusCode, failureResponse)
 	}
 }

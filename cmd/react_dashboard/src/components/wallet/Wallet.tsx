@@ -135,14 +135,17 @@ const Wallet: React.FC<WalletProps> = ({ type }) => {
       message: "Transaction request sent",
     });
 
-    transaction({
-      message: "USER TRANSACTION",
-      recipientBlockchainAddress: wallet.details.recipientAddress,
-      senderBlockchainAddress: wallet.details.blockchainAddress,
-      senderPrivateKey: wallet.details.privateKey,
-      senderPublicKey: wallet.details.publicKey,
-      value: wallet.details.amount,
-    })
+    transaction(
+      {
+        message: "USER TRANSACTION",
+        recipientBlockchainAddress: wallet.details.recipientAddress,
+        senderBlockchainAddress: wallet.details.blockchainAddress,
+        senderPrivateKey: wallet.details.privateKey,
+        senderPublicKey: wallet.details.publicKey,
+        value: wallet.details.amount,
+      },
+      walletContext.selectedMinerId,
+    )
       .then(() => {
         walletContext.setMinerWalletUtil({
           isActive: true,

@@ -22,6 +22,7 @@ describe("wallet api", () => {
       publicKey: "user-public-key",
     });
     expect(post).toHaveBeenCalledWith("/user/wallet", null, {
+      params: { miner_id: "1" },
       signal: undefined,
     });
   });
@@ -37,7 +38,7 @@ describe("wallet api", () => {
       "Address missing",
     );
     expect(get).toHaveBeenCalledWith("/wallet/balance", {
-      params: { blockchainAddress: "wallet-address" },
+      params: { blockchainAddress: "wallet-address", miner_id: "1" },
       signal: undefined,
     });
   });
@@ -56,6 +57,8 @@ describe("wallet api", () => {
       .mockResolvedValue({ data: { accepted: true } });
 
     await expect(transaction(payload)).resolves.toEqual({ accepted: true });
-    expect(post).toHaveBeenCalledWith("/transaction", payload);
+    expect(post).toHaveBeenCalledWith("/transaction", payload, {
+      params: { miner_id: "1" },
+    });
   });
 });

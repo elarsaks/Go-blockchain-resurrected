@@ -40,7 +40,7 @@ sequenceDiagram
     W-->>UI: Miner wallet JSON
 ```
 
-The selected miner controls later block, balance, and transaction requests until another miner is selected.
+The dashboard includes the selected `miner_id` on later block, balance, and transaction requests.
 
 ## User Wallet Creation
 

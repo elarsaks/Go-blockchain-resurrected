@@ -3,7 +3,6 @@ package handlers
 import (
 	"bytes"
 	"encoding/json"
-	"io"
 	"log"
 	"net/http"
 
@@ -14,13 +13,22 @@ import (
 func (h *WalletServerHandler) GetUserWallet(w http.ResponseWriter, req *http.Request) {
 
 	if req.Method != http.MethodPost {
-		http.Error(w, "Invalid HTTP Method", http.StatusBadRequest)
+		writeJSONError(w, http.StatusMethodNotAllowed, "method not allowed")
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
+	gateway, err := h.gatewayForRequest(req)
+	if err != nil {
+		writeJSONError(w, http.StatusBadRequest, err.Error())
+		return
+	}
 
-	userWallet := wallet.NewWallet()
+	userWallet, err := wallet.NewWalletWithError()
+	if err != nil {
+		log.Println("ERROR: Failed to create wallet:", err)
+		writeJSONError(w, http.StatusInternalServerError, "failed to create wallet")
+		return
+	}
 
 	// Create a payload containing the userWallet's blockchain address
 	payload := struct {
@@ -32,33 +40,32 @@ func (h *WalletServerHandler) GetUserWallet(w http.ResponseWriter, req *http.Req
 	payloadBytes, err := json.Marshal(payload)
 	if err != nil {
 		log.Println("ERROR: Failed to marshal payload:", err)
-		w.WriteHeader(http.StatusInternalServerError)
+		writeJSONError(w, http.StatusInternalServerError, "failed to encode wallet registration")
 		return
 	}
 
 	// Register the userWallet on the blockchain
-	resp, err := http.Post(h.server.Gateway()+"/wallet/register", "application/json", bytes.NewBuffer(payloadBytes))
+	minerReq, err := http.NewRequest(http.MethodPost, gateway+"/wallet/register", bytes.NewBuffer(payloadBytes))
+	if err != nil {
+		log.Printf("ERROR: Failed to build wallet registration request: %v", err)
+		writeJSONError(w, http.StatusInternalServerError, "failed to register wallet")
+		return
+	}
+	minerReq.Header.Set("Content-Type", "application/json")
+
+	resp, err := h.client.Do(minerReq)
 	if err != nil {
 		log.Printf("ERROR: Failed to register wallet: %v", err)
-		w.WriteHeader(http.StatusInternalServerError)
+		writeJSONError(w, http.StatusBadGateway, "failed to register wallet")
 		return
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		log.Println("ERROR: Failed to register wallet")
-		w.WriteHeader(http.StatusInternalServerError)
+		writeJSONError(w, http.StatusBadGateway, "failed to register wallet")
 		return
 	}
 
-	// Return the userWallet as part of the response
-	userWalletBytes, err := json.Marshal(userWallet)
-	if err != nil {
-		log.Println("ERROR: Failed to marshal userWallet:", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	// TODO: return error messages
-	io.WriteString(w, string(userWalletBytes))
+	writeJSON(w, http.StatusOK, userWallet)
 }

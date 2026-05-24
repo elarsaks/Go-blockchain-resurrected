@@ -117,7 +117,7 @@ func (bc *Blockchain) CreateTransaction(sender string, recipient string, message
 				return false, err
 			}
 			buf := bytes.NewBuffer(m)
-			endpoint := fmt.Sprintf("%s/transactions", n)
+			endpoint := peerEndpoint(n, "/transactions")
 			req, err := http.NewRequest("PUT", endpoint, buf)
 			if err != nil {
 				log.Printf("ERROR: %v", err)

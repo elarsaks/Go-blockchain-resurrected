@@ -32,6 +32,31 @@ func TestCalculateTotalBalanceTracksReceivedAndSpentTransactions(t *testing.T) {
 	}
 }
 
+func TestNewBlockchainRegistersMinerAddressWithZeroBalance(t *testing.T) {
+	bc := NewBlockchain("miner", 5001)
+
+	balance, err := bc.CalculateTotalBalance("miner")
+	if err != nil {
+		t.Fatalf("CalculateTotalBalance(miner) returned error: %v", err)
+	}
+	if balance != 0 {
+		t.Fatalf("miner balance = %v, want 0", balance)
+	}
+}
+
+func TestCalculateTotalBalanceTreatsLocalMinerAddressAsKnownAfterChainReplacement(t *testing.T) {
+	bc := NewBlockchain("miner", 5001)
+	bc.chain = []*Block{NewBlock(0, [32]byte{}, nil)}
+
+	balance, err := bc.CalculateTotalBalance("miner")
+	if err != nil {
+		t.Fatalf("CalculateTotalBalance(miner) returned error: %v", err)
+	}
+	if balance != 0 {
+		t.Fatalf("miner balance = %v, want 0", balance)
+	}
+}
+
 func TestCalculateTotalBalanceRejectsUnknownAddress(t *testing.T) {
 	bc := NewBlockchain("miner", 5001)
 

@@ -32,4 +32,4 @@ flowchart LR
     Miner3 <--> Miner1
 ```
 
-The browser does not talk to miners directly. It talks to the wallet server. The wallet server creates/signs wallet transactions and forwards blockchain operations to the currently selected miner gateway. Miners own blockchain state, transaction pools, mining, and peer synchronization.
+The browser does not talk to miners directly. It talks to the wallet server. The wallet server creates/signs wallet transactions and forwards blockchain operations to the miner requested by each API call. Miners own blockchain state, transaction pools, mining, and peer synchronization.

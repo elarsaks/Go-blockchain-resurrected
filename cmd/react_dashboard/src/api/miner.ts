@@ -1,11 +1,17 @@
 import { apiClient } from "api/client";
 
 // Fetch latest blocks
-function fetchBlockchainData(signal?: AbortSignal): Promise<Block[]> {
+function fetchBlockchainData(
+  minerIdOrSignal: string | AbortSignal = "1",
+  signal?: AbortSignal,
+): Promise<Block[]> {
+  const minerId = typeof minerIdOrSignal === "string" ? minerIdOrSignal : "1";
+  const requestSignal = typeof minerIdOrSignal === "string" ? signal : minerIdOrSignal;
+
   return apiClient
     .get<Block[]>("/miner/blocks", {
-      params: { amount: 10 },
-      signal,
+      params: { amount: 10, miner_id: minerId },
+      signal: requestSignal,
     })
     .then((response) => response.data);
 }

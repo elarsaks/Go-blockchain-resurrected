@@ -2,9 +2,9 @@ package handlers
 
 import (
 	"bytes"
+	"encoding/hex"
 	"encoding/json"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"strconv"
@@ -29,14 +29,25 @@ func (h *WalletServerHandler) CreateTransaction(w http.ResponseWriter, req *http
 		// If there was an error decoding the request, log the error and send a fail response
 		if err != nil {
 			log.Printf("ERROR: %v", err)
-			io.WriteString(w, string(utils.JsonStatus("fail")))
+			writeJSONError(w, http.StatusBadRequest, "invalid transaction request")
 			return
 		}
 
 		// Validate the transaction request, send a fail response if validation fails
 		if !t.Validate() {
 			log.Println("ERROR: missing field(s)")
-			io.WriteString(w, string(utils.JsonStatus("fail")))
+			writeJSONError(w, http.StatusBadRequest, "missing required transaction field")
+			return
+		}
+
+		gateway, err := h.gatewayForRequest(req)
+		if err != nil {
+			writeJSONError(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		if !isValidPublicKeyString(*t.SenderPublicKey) || !isValidPrivateKeyString(*t.SenderPrivateKey) {
+			writeJSONError(w, http.StatusBadRequest, "invalid sender key")
 			return
 		}
 
@@ -46,15 +57,12 @@ func (h *WalletServerHandler) CreateTransaction(w http.ResponseWriter, req *http
 
 		// Parse the value from the request, handle error if the value is not a valid float
 		value, err := strconv.ParseFloat(*t.Value, 32)
-		if err != nil {
+		if err != nil || value <= 0 {
 			log.Println("ERROR: parse error")
-			io.WriteString(w, string(utils.JsonStatus("fail")))
+			writeJSONError(w, http.StatusBadRequest, "transaction value must be positive")
 			return
 		}
 		value32 := float32(value)
-
-		// Setting the Content-Type of the response to application/json
-		w.Header().Add("Content-Type", "application/json")
 
 		// Create a new Transaction object
 		transaction := wallet.NewTransaction(
@@ -66,7 +74,12 @@ func (h *WalletServerHandler) CreateTransaction(w http.ResponseWriter, req *http
 			value32)
 
 		// Generate a signature for the transaction
-		signature := transaction.GenerateSignature()
+		signature, err := transaction.GenerateSignatureWithError()
+		if err != nil {
+			log.Printf("ERROR: Failed to sign transaction: %v", err)
+			writeJSONError(w, http.StatusBadRequest, "failed to sign transaction")
+			return
+		}
 		signatureStr := signature.String()
 
 		// Create a new TransactionRequest object that will be sent to the miner
@@ -80,11 +93,24 @@ func (h *WalletServerHandler) CreateTransaction(w http.ResponseWriter, req *http
 		}
 
 		// Serialize the TransactionRequest object into JSON
-		m, _ := json.Marshal(bt)
+		m, err := json.Marshal(bt)
+		if err != nil {
+			log.Printf("ERROR: Failed to encode transaction: %v", err)
+			writeJSONError(w, http.StatusInternalServerError, "failed to encode transaction")
+			return
+		}
 		buf := bytes.NewBuffer(m)
 
 		// Make a POST request to the miner's API to create a new transaction
-		resp, err := http.Post(h.server.Gateway()+"/transactions", "application/json", buf)
+		minerReq, err := http.NewRequest(http.MethodPost, gateway+"/transactions", buf)
+		if err != nil {
+			log.Printf("ERROR: Failed to build POST request: %v", err)
+			writeJSONError(w, http.StatusInternalServerError, "failed to create transaction")
+			return
+		}
+		minerReq.Header.Set("Content-Type", "application/json")
+
+		resp, err := h.client.Do(minerReq)
 
 		// Check if there was an error while making the POST request
 		if err != nil {
@@ -92,12 +118,13 @@ func (h *WalletServerHandler) CreateTransaction(w http.ResponseWriter, req *http
 			log.Printf("ERROR: Failed to make POST request: %v", err)
 
 			// Pass the error message to the client
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			writeJSONError(w, http.StatusBadGateway, "failed to reach miner")
 			return
 		}
+		defer resp.Body.Close()
 
 		// Read the response body
-		body, err := ioutil.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			// Log the error message
 			log.Printf("ERROR: Failed to read response body: %v", err)
@@ -109,7 +136,7 @@ func (h *WalletServerHandler) CreateTransaction(w http.ResponseWriter, req *http
 
 		// Check the response status code and send a success response if it was 201
 		if resp.StatusCode == 201 {
-			io.WriteString(w, string(utils.JsonStatus("success")))
+			writeJSON(w, http.StatusOK, map[string]string{"message": "success"})
 			return
 		}
 
@@ -119,7 +146,23 @@ func (h *WalletServerHandler) CreateTransaction(w http.ResponseWriter, req *http
 
 	// If the HTTP method is not POST, send a 400 response and log an error message
 	default:
-		w.WriteHeader(http.StatusBadRequest)
+		writeJSONError(w, http.StatusMethodNotAllowed, "method not allowed")
 		log.Println("ERROR: Invalid HTTP Method")
 	}
+}
+
+func isValidPublicKeyString(value string) bool {
+	return len(value) == 128 && isHexString(value)
+}
+
+func isValidPrivateKeyString(value string) bool {
+	return value != "" && isHexString(value)
+}
+
+func isHexString(value string) bool {
+	if len(value)%2 != 0 {
+		value = "0" + value
+	}
+	_, err := hex.DecodeString(value)
+	return err == nil
 }
