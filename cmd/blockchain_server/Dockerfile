@@ -1,4 +1,4 @@
-FROM golang:1.18.0-alpine
+FROM golang:1.18.0-alpine AS builder
 
 WORKDIR /app
 
@@ -8,8 +8,12 @@ RUN go mod download
 
 COPY . .
 
-WORKDIR /app/cmd/blockchain_server
+RUN CGO_ENABLED=0 go build -buildvcs=false -o /bin/blockchain-server ./cmd/blockchain_server
+
+FROM alpine:3.19
+
+COPY --from=builder /bin/blockchain-server /bin/blockchain-server
 
 EXPOSE 5001 5002 5003
 
-CMD ["go", "run", "-buildvcs=false", "."]
+CMD ["/bin/blockchain-server"]
