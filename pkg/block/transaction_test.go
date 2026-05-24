@@ -3,6 +3,8 @@ package block
 import (
 	"encoding/json"
 	"testing"
+
+	walletpkg "github.com/elarsaks/Go-blockchain/pkg/wallet"
 )
 
 func TestNewTransactionMapsFields(t *testing.T) {
@@ -46,5 +48,57 @@ func TestAddTransactionMapsFields(t *testing.T) {
 	const want = `{"message":"reward","recipientBlockchainAddress":"recipient","senderBlockchainAddress":"THE BLOCKCHAIN","value":1}`
 	if string(gotJSON) != want {
 		t.Fatalf("transaction JSON = %s, want %s", gotJSON, want)
+	}
+}
+
+func TestVerifyTransactionSignatureAcceptsWalletSignature(t *testing.T) {
+	senderWallet, err := walletpkg.NewWalletWithError()
+	if err != nil {
+		t.Fatalf("NewWalletWithError returned error: %v", err)
+	}
+	walletTransaction := walletpkg.NewTransaction(
+		"payment",
+		"recipient",
+		senderWallet.BlockchainAddress(),
+		senderWallet.PrivateKey(),
+		senderWallet.PublicKey(),
+		1,
+	)
+	signature, err := walletTransaction.GenerateSignatureWithError()
+	if err != nil {
+		t.Fatalf("GenerateSignatureWithError returned error: %v", err)
+	}
+
+	bc := NewBlockchain("miner", 5001)
+	blockTransaction := NewTransaction(senderWallet.BlockchainAddress(), "recipient", "payment", 1)
+
+	if !bc.VerifyTransactionSignature(senderWallet.PublicKey(), signature, blockTransaction) {
+		t.Fatal("expected wallet signature to verify")
+	}
+}
+
+func TestVerifyTransactionSignatureRejectsTamperedTransaction(t *testing.T) {
+	senderWallet, err := walletpkg.NewWalletWithError()
+	if err != nil {
+		t.Fatalf("NewWalletWithError returned error: %v", err)
+	}
+	walletTransaction := walletpkg.NewTransaction(
+		"payment",
+		"recipient",
+		senderWallet.BlockchainAddress(),
+		senderWallet.PrivateKey(),
+		senderWallet.PublicKey(),
+		1,
+	)
+	signature, err := walletTransaction.GenerateSignatureWithError()
+	if err != nil {
+		t.Fatalf("GenerateSignatureWithError returned error: %v", err)
+	}
+
+	bc := NewBlockchain("miner", 5001)
+	tamperedTransaction := NewTransaction(senderWallet.BlockchainAddress(), "attacker", "payment", 1)
+
+	if bc.VerifyTransactionSignature(senderWallet.PublicKey(), signature, tamperedTransaction) {
+		t.Fatal("expected tampered transaction to fail signature verification")
 	}
 }
