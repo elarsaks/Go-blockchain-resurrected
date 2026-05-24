@@ -54,7 +54,7 @@ func (bc *Blockchain) CreateBlock(nonce int, previousHash [32]byte) *Block {
 	bc.chain = append(bc.chain, b)
 	bc.transactionPool = []*Transaction{}
 	for _, n := range bc.neighbors {
-		endpoint := fmt.Sprintf("http://%s/transactions", n)
+		endpoint := peerEndpoint(n, "/transactions")
 		req, err := http.NewRequest("DELETE", endpoint, nil)
 		if err != nil {
 			log.Printf("ERROR: create delete transactions request: %v", err)

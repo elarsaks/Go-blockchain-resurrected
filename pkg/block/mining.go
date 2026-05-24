@@ -51,7 +51,7 @@ func (bc *Blockchain) Mining() bool {
 
 		fmt.Println("Send consensus to neigbour ", n)
 
-		endpoint := fmt.Sprintf("%s/consensus", n)
+		endpoint := peerEndpoint(n, "/consensus")
 		req, err := http.NewRequest("PUT", endpoint, nil)
 		if err != nil {
 			log.Printf("ERROR: %v", err)
@@ -139,7 +139,7 @@ func (bc *Blockchain) ResolveConflicts() bool {
 		fmt.Println("Resolve conflict with ", n)
 
 		// Construct the endpoint URL to fetch the chain from the neighbor
-		endpoint := fmt.Sprintf("%s/chain", n)
+		endpoint := peerEndpoint(n, "/chain")
 
 		// Send an HTTP GET request to the neighbor's endpoint to fetch their chain
 		resp, err := peerHTTPClient.Get(endpoint)
