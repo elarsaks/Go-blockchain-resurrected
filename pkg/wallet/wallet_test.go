@@ -1,6 +1,8 @@
 package wallet
 
 import (
+	"crypto/ecdsa"
+	"crypto/sha256"
 	"encoding/json"
 	"testing"
 )
@@ -58,5 +60,57 @@ func TestGenerateSignatureWithErrorRejectsMissingPrivateKey(t *testing.T) {
 	}
 	if signature != nil {
 		t.Fatal("signature should be nil when signing fails")
+	}
+}
+
+func TestGenerateSignatureWithErrorSignsTransactionJSON(t *testing.T) {
+	wallet, err := NewWalletWithError()
+	if err != nil {
+		t.Fatalf("NewWalletWithError returned error: %v", err)
+	}
+	transaction := NewTransaction(
+		"hello",
+		"recipient",
+		wallet.BlockchainAddress(),
+		wallet.PrivateKey(),
+		wallet.PublicKey(),
+		2,
+	)
+
+	signature, err := transaction.GenerateSignatureWithError()
+	if err != nil {
+		t.Fatalf("GenerateSignatureWithError returned error: %v", err)
+	}
+	if signature == nil {
+		t.Fatal("signature is nil")
+	}
+
+	message, err := json.Marshal(transaction)
+	if err != nil {
+		t.Fatalf("Marshal transaction: %v", err)
+	}
+	digest := sha256.Sum256(message)
+
+	if !ecdsa.Verify(wallet.PublicKey(), digest[:], signature.R, signature.S) {
+		t.Fatal("signature did not verify against transaction JSON")
+	}
+}
+
+func TestGenerateSignatureUsesErrorReturningPath(t *testing.T) {
+	wallet, err := NewWalletWithError()
+	if err != nil {
+		t.Fatalf("NewWalletWithError returned error: %v", err)
+	}
+	transaction := NewTransaction(
+		"hello",
+		"recipient",
+		wallet.BlockchainAddress(),
+		wallet.PrivateKey(),
+		wallet.PublicKey(),
+		2,
+	)
+
+	if signature := transaction.GenerateSignature(); signature == nil {
+		t.Fatal("GenerateSignature returned nil")
 	}
 }
