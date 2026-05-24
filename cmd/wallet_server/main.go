@@ -35,24 +35,19 @@ func (ws *WalletServer) Gateway() string {
 	return ws.gateway
 }
 
-func (ws *WalletServer) SetGateway(gateway string) bool {
-
+func (ws *WalletServer) MinerGateway(minerID string) (string, error) {
 	host := GetHost()
 
-	switch gateway {
+	switch minerID {
 	case "1":
-		ws.gateway = fmt.Sprintf("http://%s:5001", host)
+		return fmt.Sprintf("http://%s:5001", host), nil
 	case "2":
-		ws.gateway = fmt.Sprintf("http://%s:5002", host)
+		return fmt.Sprintf("http://%s:5002", host), nil
 	case "3":
-		ws.gateway = fmt.Sprintf("http://%s:5003", host)
+		return fmt.Sprintf("http://%s:5003", host), nil
 	default:
-		ws.gateway = fmt.Sprintf("http://%s:5001", host)
+		return "", fmt.Errorf("invalid miner_id %q", minerID)
 	}
-
-	fmt.Printf("Gateway to Blockchain: %s\n", ws.gateway)
-
-	return true
 }
 
 func NewWalletServer(port uint16, gateway string) *WalletServer {
@@ -69,12 +64,12 @@ func (ws *WalletServer) Run() {
 	handler := handlers.NewWalletServerHandler(ws)
 
 	// Define routes
-	router.HandleFunc("/", handler.GetApiDescription)
-	router.HandleFunc("/user/wallet", handler.GetUserWallet)
-	router.HandleFunc("/wallet/balance", handler.GetWalletBalance)
-	router.HandleFunc("/transaction", handler.CreateTransaction)
-	router.HandleFunc("/miner/blocks", handler.GetBlocks)
-	router.HandleFunc("/miner/wallet", handler.GetMinerWallet)
+	router.HandleFunc("/", handler.GetApiDescription).Methods(http.MethodGet)
+	router.HandleFunc("/user/wallet", handler.GetUserWallet).Methods(http.MethodPost)
+	router.HandleFunc("/wallet/balance", handler.GetWalletBalance).Methods(http.MethodGet)
+	router.HandleFunc("/transaction", handler.CreateTransaction).Methods(http.MethodPost)
+	router.HandleFunc("/miner/blocks", handler.GetBlocks).Methods(http.MethodGet)
+	router.HandleFunc("/miner/wallet", handler.GetMinerWallet).Methods(http.MethodPost)
 
 	// Start server
 	log.Fatal(http.ListenAndServe("0.0.0.0:"+strconv.Itoa(int(ws.Port())), router))
@@ -95,6 +90,11 @@ func main() {
 	// Print gateway and port
 	log.Printf("Port: %d\n", port)
 
-	app := NewWalletServer(uint16(port), "http://localhost:5001")
+	defaultGateway, err := (&WalletServer{}).MinerGateway("1")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	app := NewWalletServer(uint16(port), defaultGateway)
 	app.Run()
 }

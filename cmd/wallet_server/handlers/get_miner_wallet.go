@@ -1,9 +1,7 @@
 package handlers
 
 import (
-	"bytes"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 )
@@ -16,28 +14,44 @@ import (
 // 5. Decodes the JSON response into a struct or a map
 // 6. Encodes the wallet data to JSON and writes it to the response
 func (h *WalletServerHandler) GetMinerWallet(w http.ResponseWriter, req *http.Request) {
+	if req.Method != http.MethodPost {
+		writeJSONError(w, http.StatusMethodNotAllowed, "method not allowed")
+		return
+	}
+
 	// Get the 'miner' query parameter from the URL
 	minerID := req.URL.Query().Get("miner_id")
+	if minerID == "" {
+		minerID = "1"
+	}
 
-	// Set the gateway to the miner
-	h.server.SetGateway(minerID)
-	// Make a POST request to the miner's API to fetch the wallet
-	requestBody := []byte("optional_request_data")
+	gateway, err := h.server.MinerGateway(minerID)
+	if err != nil {
+		writeJSONError(w, http.StatusBadRequest, err.Error())
+		return
+	}
 
-	resp, err := http.Post(fmt.Sprintf(h.server.Gateway()+"/miner/wallet"),
-		"application/json", bytes.NewBuffer(requestBody))
+	minerReq, err := http.NewRequest(http.MethodPost, gateway+"/miner/wallet", nil)
+	if err != nil {
+		log.Printf("ERROR: Failed to build miner wallet request: %v", err)
+		writeJSONError(w, http.StatusInternalServerError, "failed to fetch miner wallet")
+		return
+	}
+	minerReq.Header.Set("Content-Type", "application/json")
+
+	resp, err := h.client.Do(minerReq)
 
 	if err != nil {
 		log.Printf("ERROR: %v", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		writeJSONError(w, http.StatusBadGateway, "failed to reach miner")
 		return
 	}
 	defer resp.Body.Close()
 
 	// Check the response status code
 	if resp.StatusCode != http.StatusOK {
-		fmt.Printf("ERROR: Error fetching wallet from %s", minerID)
-		http.Error(w, fmt.Sprintf("Error fetching wallet from %s", minerID), resp.StatusCode)
+		log.Printf("ERROR: Error fetching wallet from %s", minerID)
+		writeJSONError(w, http.StatusBadGateway, "failed to fetch miner wallet")
 		return
 	}
 
@@ -45,19 +59,10 @@ func (h *WalletServerHandler) GetMinerWallet(w http.ResponseWriter, req *http.Re
 	var walletData map[string]interface{}
 	err = json.NewDecoder(resp.Body).Decode(&walletData)
 	if err != nil {
-		fmt.Printf("Error decoding wallet response")
-		http.Error(w, "Error decoding wallet response", http.StatusInternalServerError)
+		log.Printf("ERROR: Error decoding wallet response: %v", err)
+		writeJSONError(w, http.StatusBadGateway, "invalid miner wallet response")
 		return
 	}
 
-	// Encode the wallet data to JSON and write it to the response
-	jsonData, err := json.Marshal(walletData)
-
-	if err != nil {
-		fmt.Printf("Error encoding wallet data")
-		http.Error(w, "Error encoding wallet data", http.StatusInternalServerError)
-		return
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.Write(jsonData)
+	writeJSON(w, http.StatusOK, walletData)
 }

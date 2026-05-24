@@ -8,7 +8,6 @@ import React, {
   useEffect,
   useReducer,
   useRef,
-  useState,
 } from "react";
 
 const initialState: StoreWallet = {
@@ -39,18 +38,22 @@ export const WalletContext = createContext<WalletStore>({
 interface WalletProviderProps {
   children: React.ReactNode;
   previousHash?: string;
+  selectedMinerId: string;
+  onMinerSelect: (minerId: string) => void;
 }
 
 export const WalletProvider: React.FC<WalletProviderProps> = ({
   children,
   previousHash,
+  selectedMinerId,
+  onMinerSelect,
 }) => {
   const [minerWallet, dispatchMinerWallet] = useReducer(WalletReducer, initialState);
   const [userWallet, dispatchUserWallet] = useReducer(WalletReducer, initialState);
-  const [selectedMinerId, setSelectedMinerId] = useState("1");
   const walletRequestIdRef = useRef(0);
   const minerBalanceRequestIdRef = useRef(0);
   const userBalanceRequestIdRef = useRef(0);
+  const didLoadWalletsRef = useRef(false);
   const walletRequestAbortRef = useRef<AbortController | null>(null);
   const minerBalanceAbortRef = useRef<AbortController | null>(null);
   const userBalanceAbortRef = useRef<AbortController | null>(null);
@@ -144,7 +147,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({
 
       Promise.all([
         fetchMinerWalletDetails(minerId, signal),
-        fetchUserWalletDetails(signal),
+        fetchUserWalletDetails(minerId, signal),
       ])
         .then(([minerDetails, userDetails]) => {
           if (requestId !== walletRequestIdRef.current) return;
@@ -187,7 +190,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({
       const signal = startRequest(walletRequestAbortRef);
       minerBalanceAbortRef.current?.abort();
 
-      setSelectedMinerId(minerId);
+      onMinerSelect(minerId);
 
       dispatchMinerWallet({
         type: "SET_WALLET_UTIL",
@@ -234,7 +237,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({
           });
         });
     },
-    [startRequest, userWallet.blockchainAddress],
+    [onMinerSelect, startRequest, userWallet.blockchainAddress],
   );
 
   const getUserWalletWalletBalance = useCallback(() => {
@@ -242,7 +245,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({
     userBalanceRequestIdRef.current = requestId;
     const signal = startRequest(userBalanceAbortRef);
 
-    fetchWalletBalance(userWallet.blockchainAddress, signal)
+    fetchWalletBalance(userWallet.blockchainAddress, selectedMinerId, signal)
       .then((userBalance) => {
         if (requestId !== userBalanceRequestIdRef.current) return;
 
@@ -267,14 +270,14 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({
           });
         }
       });
-  }, [startRequest, userWallet.blockchainAddress]);
+  }, [selectedMinerId, startRequest, userWallet.blockchainAddress]);
 
   const getMinerWalletWalletBalance = useCallback(() => {
     const requestId = minerBalanceRequestIdRef.current + 1;
     minerBalanceRequestIdRef.current = requestId;
     const signal = startRequest(minerBalanceAbortRef);
 
-    fetchWalletBalance(minerWallet.blockchainAddress, signal)
+    fetchWalletBalance(minerWallet.blockchainAddress, selectedMinerId, signal)
       .then((minerBalance) => {
         if (requestId !== minerBalanceRequestIdRef.current) return;
 
@@ -298,12 +301,14 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({
           });
         }
       });
-  }, [minerWallet.blockchainAddress, startRequest]);
+  }, [minerWallet.blockchainAddress, selectedMinerId, startRequest]);
 
   // Fetch wallet details
   useEffect(() => {
-    loadWallets("1");
-  }, [loadWallets]);
+    if (didLoadWalletsRef.current) return;
+    didLoadWalletsRef.current = true;
+    loadWallets(selectedMinerId);
+  }, [loadWallets, selectedMinerId]);
 
   useEffect(() => {
     return () => {

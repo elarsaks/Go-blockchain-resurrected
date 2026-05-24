@@ -21,7 +21,13 @@ Returns a small JSON map of available routes.
 
 ### `POST /user/wallet`
 
-Creates a new user wallet, registers that wallet address on the selected miner, and returns wallet details.
+Creates a new user wallet, registers that wallet address on the requested miner, and returns wallet details.
+
+Query parameters:
+
+| Name | Required | Description |
+| --- | --- | --- |
+| `miner_id` | no | `"1"`, `"2"`, or `"3"`. Defaults to miner 1 when omitted. Invalid values return `400`. |
 
 Response:
 
@@ -36,18 +42,18 @@ Response:
 Notes:
 
 - The wallet server creates the wallet with `pkg/wallet.NewWallet`.
-- It registers the wallet by posting the address to the selected miner's `/wallet/register`.
+- It registers the wallet by posting the address to the requested miner's `/wallet/register`.
 - The miner records a zero-value registration transaction and starts mining.
 
 ### `POST /miner/wallet?miner_id=1`
 
-Selects a miner gateway and returns that miner's wallet details.
+Returns the requested miner's wallet details.
 
 Query parameters:
 
 | Name | Required | Description |
 | --- | --- | --- |
-| `miner_id` | no | `"1"`, `"2"`, or `"3"`. Defaults to miner 1 when not recognized. |
+| `miner_id` | no | `"1"`, `"2"`, or `"3"`. Defaults to miner 1 when omitted. Invalid values return `400`. |
 
 Response:
 
@@ -59,13 +65,16 @@ Response:
 }
 ```
 
-Side effect:
+### `GET /wallet/balance?blockchainAddress=...&miner_id=1`
 
-- Updates the wallet server's active gateway.
+Fetches the requested miner's balance calculation for a blockchain address.
 
-### `GET /wallet/balance?blockchainAddress=...`
+Query parameters:
 
-Fetches the selected miner's balance calculation for a blockchain address.
+| Name | Required | Description |
+| --- | --- | --- |
+| `blockchainAddress` | yes | Address to look up. |
+| `miner_id` | no | `"1"`, `"2"`, or `"3"`. Defaults to miner 1 when omitted. Invalid values return `400`. |
 
 Response:
 
@@ -80,7 +89,13 @@ If the miner cannot find the address in the chain, `error` contains a message.
 
 ### `POST /transaction`
 
-Creates and signs a transaction, then forwards it to the selected miner.
+Creates and signs a transaction, then forwards it to the requested miner.
+
+Query parameters:
+
+| Name | Required | Description |
+| --- | --- | --- |
+| `miner_id` | no | `"1"`, `"2"`, or `"3"`. Defaults to miner 1 when omitted. Invalid values return `400`. |
 
 Request:
 
@@ -110,15 +125,16 @@ Notes:
 - The wallet server signs the transaction with the sender private key.
 - The miner verifies the signature before accepting the transaction.
 
-### `GET /miner/blocks?amount=10`
+### `GET /miner/blocks?amount=10&miner_id=1`
 
-Fetches recent blocks from the selected miner.
+Fetches recent blocks from the requested miner.
 
 Query parameters:
 
 | Name | Required | Description |
 | --- | --- | --- |
 | `amount` | yes | Positive integer. The current miner handler always returns the latest 10 blocks, but the wallet server still validates this query parameter. |
+| `miner_id` | no | `"1"`, `"2"`, or `"3"`. Defaults to miner 1 when omitted. Invalid values return `400`. |
 
 Response:
 
