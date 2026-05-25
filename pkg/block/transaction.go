@@ -44,6 +44,18 @@ func (bc *Blockchain) AddTransaction(sender string,
 	value float32,
 	senderPublicKey *ecdsa.PublicKey,
 	s *utils.Signature) (bool, error) {
+	bc.mux.Lock()
+	defer bc.mux.Unlock()
+
+	return bc.addTransactionLocked(sender, recipient, message, value, senderPublicKey, s)
+}
+
+func (bc *Blockchain) addTransactionLocked(sender string,
+	recipient string,
+	message string,
+	value float32,
+	senderPublicKey *ecdsa.PublicKey,
+	s *utils.Signature) (bool, error) {
 
 	// Create a new transaction
 	t := NewTransaction(sender, recipient, message, value)
@@ -60,7 +72,7 @@ func (bc *Blockchain) AddTransaction(sender string,
 	}
 
 	// Calculate the total balance of the sender
-	balance, err := bc.CalculateTotalBalance(sender)
+	balance, err := bc.calculateTotalBalanceLocked(sender)
 	if err != nil {
 		// If there is an error calculating the balance, return false and the error
 		return false, fmt.Errorf("ERROR: CalculateTotalAmount: %v", err)
@@ -80,6 +92,9 @@ func (bc *Blockchain) AddTransaction(sender string,
 
 // Empty the transaction pool the Blockchain
 func (bc *Blockchain) ClearTransactionPool() {
+	bc.mux.Lock()
+	defer bc.mux.Unlock()
+
 	bc.transactionPool = bc.transactionPool[:0]
 }
 
@@ -138,6 +153,13 @@ func (bc *Blockchain) CreateTransaction(sender string, recipient string, message
 
 // Copy the transaction pool
 func (bc *Blockchain) CopyTransactionPool() []*Transaction {
+	bc.mux.Lock()
+	defer bc.mux.Unlock()
+
+	return bc.copyTransactionPoolLocked()
+}
+
+func (bc *Blockchain) copyTransactionPoolLocked() []*Transaction {
 	transactions := make([]*Transaction, 0, len(bc.transactionPool))
 	for _, t := range bc.transactionPool {
 		transactions = append(transactions,
@@ -157,6 +179,9 @@ func NewTransaction(sender string, recipient string, message string, value float
 
 // Get the transaction pool the Blockchain
 func (bc *Blockchain) TransactionPool() []*Transaction {
+	bc.mux.Lock()
+	defer bc.mux.Unlock()
+
 	return append([]*Transaction(nil), bc.transactionPool...)
 }
 

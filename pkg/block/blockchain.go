@@ -42,6 +42,9 @@ func NewBlockchain(blockchainAddress string, port uint16) *Blockchain {
 
 // Chain returns the chain of the Blockchain.
 func (bc *Blockchain) Chain() []*Block {
+	bc.mux.Lock()
+	defer bc.mux.Unlock()
+
 	return append([]*Block(nil), bc.chain...)
 }
 
@@ -53,7 +56,14 @@ func (bc *Blockchain) Run() {
 
 // CreateBlock creates a new block and appends it to the blockchain.
 func (bc *Blockchain) CreateBlock(nonce int, previousHash [32]byte) *Block {
-	b := NewBlock(nonce, previousHash, bc.transactionPool)
+	bc.mux.Lock()
+	defer bc.mux.Unlock()
+
+	return bc.createBlockLocked(nonce, previousHash, bc.transactionPool)
+}
+
+func (bc *Blockchain) createBlockLocked(nonce int, previousHash [32]byte, transactions []*Transaction) *Block {
+	b := NewBlock(nonce, previousHash, transactions)
 	bc.chain = append(bc.chain, b)
 	bc.transactionPool = []*Transaction{}
 	for _, n := range bc.neighbors {
@@ -76,11 +86,17 @@ func (bc *Blockchain) CreateBlock(nonce int, previousHash [32]byte) *Block {
 
 // LastBlock returns the last block of the Blockchain.
 func (bc *Blockchain) LastBlock() *Block {
+	bc.mux.Lock()
+	defer bc.mux.Unlock()
+
 	return bc.chain[len(bc.chain)-1]
 }
 
 // GetBlocks returns the latest blocks of the Blockchain.
 func (bc *Blockchain) GetBlocks(amount int) []*Block {
+	bc.mux.Lock()
+	defer bc.mux.Unlock()
+
 	n := len(bc.chain)
 	var last10Blocks []*Block
 	if n > amount {
