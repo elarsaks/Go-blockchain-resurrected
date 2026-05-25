@@ -3,7 +3,7 @@ package handlers
 import (
 	"bytes"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
 )
@@ -14,7 +14,7 @@ func (h *BlockchainServerHandler) RegisterWallet(w http.ResponseWriter, req *htt
 	case http.MethodPost:
 
 		// Read the request body
-		body, err := ioutil.ReadAll(req.Body)
+		body, err := io.ReadAll(req.Body)
 		if err != nil {
 			log.Printf("Failed to read request body: %v", err)
 			w.WriteHeader(http.StatusInternalServerError)
@@ -22,7 +22,7 @@ func (h *BlockchainServerHandler) RegisterWallet(w http.ResponseWriter, req *htt
 		}
 
 		// Restore the request body to its original state
-		req.Body = ioutil.NopCloser(bytes.NewBuffer(body))
+		req.Body = io.NopCloser(bytes.NewBuffer(body))
 
 		// Define a struct to capture the request body
 		type RequestBody struct {
