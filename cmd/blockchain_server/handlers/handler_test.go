@@ -109,8 +109,8 @@ func TestPostTransactionRejectsMissingFieldsWithoutMutatingPool(t *testing.T) {
 
 	handler.Transactions(rec, req)
 
-	if rec.Code != http.StatusOK {
-		t.Fatalf("expected current status 200, got %d: %s", rec.Code, rec.Body.String())
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("expected status 400, got %d: %s", rec.Code, rec.Body.String())
 	}
 	var response map[string]string
 	if err := json.NewDecoder(rec.Body).Decode(&response); err != nil {
@@ -118,6 +118,30 @@ func TestPostTransactionRejectsMissingFieldsWithoutMutatingPool(t *testing.T) {
 	}
 	if response["message"] != "fail" {
 		t.Fatalf("message = %q, want fail", response["message"])
+	}
+	if got := len(bc.TransactionPool()); got != 0 {
+		t.Fatalf("transaction pool length = %d, want 0", got)
+	}
+}
+
+func TestPostTransactionRejectsMalformedPublicKeyWithoutMutatingPool(t *testing.T) {
+	handler, bc, _ := newTestBlockchainHandler(t)
+
+	payload := `{
+		"message":"payment",
+		"recipientBlockchainAddress":"recipient",
+		"senderBlockchainAddress":"sender",
+		"senderPublicKey":"not-hex",
+		"signature":"also-not-hex",
+		"value":1
+	}`
+	req := httptest.NewRequest(http.MethodPost, "/transactions", strings.NewReader(payload))
+	rec := httptest.NewRecorder()
+
+	handler.Transactions(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("expected status 400, got %d: %s", rec.Code, rec.Body.String())
 	}
 	if got := len(bc.TransactionPool()); got != 0 {
 		t.Fatalf("transaction pool length = %d, want 0", got)

@@ -174,6 +174,8 @@ To run one miner directly, execute the following command from the repository roo
 PORT=5001 go run ./cmd/blockchain_server
 ```
 
+Miner nodes persist their generated wallet key by default. You can override that identity with `MINER_PRIVATE_KEY`, or point `MINER_PRIVATE_KEY_FILE` at a specific key file.
+
 **App will start on port:**
 | App              | URL                                 |
 |------------------|-------------------------------------|

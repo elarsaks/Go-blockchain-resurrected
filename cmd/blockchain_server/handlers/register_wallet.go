@@ -12,6 +12,7 @@ import (
 func (h *BlockchainServerHandler) RegisterWallet(w http.ResponseWriter, req *http.Request) {
 	switch req.Method {
 	case http.MethodPost:
+		w.Header().Set("Content-Type", "application/json")
 
 		// Read the request body
 		body, err := io.ReadAll(req.Body)
@@ -53,11 +54,10 @@ func (h *BlockchainServerHandler) RegisterWallet(w http.ResponseWriter, req *htt
 			Message: "Wallet registered successfully",
 		}
 		m, _ := json.Marshal(response)
-		w.Header().Set("Content-Type", "application/json")
-		w.Write(m)
+		_, _ = w.Write(m)
 
 	default:
 		log.Println("ERROR: Invalid HTTP Method")
-		w.WriteHeader(http.StatusBadRequest)
+		w.WriteHeader(http.StatusMethodNotAllowed)
 	}
 }
