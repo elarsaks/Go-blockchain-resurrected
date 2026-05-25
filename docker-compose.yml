@@ -1,8 +1,8 @@
 services:
   react-dashboard:
     build:
-      context: ./cmd/react_dashboard
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./cmd/react_dashboard/Dockerfile
     container_name: react-dashboard
     restart: unless-stopped
     ports:

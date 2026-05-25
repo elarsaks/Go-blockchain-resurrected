@@ -29,7 +29,7 @@ func (bc *Blockchain) Mining() bool {
 	}
 
 	// Add a mining reward transaction
-	_, err := bc.AddTransaction(MINING_SENDER, bc.blockchainAddress, "MINING REWARD", MINING_REWARD, nil, nil)
+	_, err := bc.addTransactionLocked(MINING_SENDER, bc.blockchainAddress, "MINING REWARD", MINING_REWARD, nil, nil)
 
 	// If an error occurred adding the transaction, log the error and return false
 	if err != nil {
@@ -38,9 +38,10 @@ func (bc *Blockchain) Mining() bool {
 	}
 
 	// Find a new proof of work and create a new block
-	nonce := bc.ProofOfWork()
-	previousHash := bc.LastBlock().Hash()
-	bc.CreateBlock(nonce, previousHash)
+	transactions := bc.copyTransactionPoolLocked()
+	previousHash := bc.chain[len(bc.chain)-1].Hash()
+	nonce := bc.proofOfWork(transactions, previousHash)
+	bc.createBlockLocked(nonce, previousHash, transactions)
 
 	// Log a successful mining operation
 	// #debug
@@ -97,8 +98,16 @@ func (bc *Blockchain) ValidProof(nonce int, previousHash [32]byte, transactions 
 
 // ProofOfWork finds the proof of work.
 func (bc *Blockchain) ProofOfWork() int {
-	transactions := bc.CopyTransactionPool()
-	previousHash := bc.LastBlock().Hash()
+	bc.mux.Lock()
+	defer bc.mux.Unlock()
+
+	transactions := bc.copyTransactionPoolLocked()
+	previousHash := bc.chain[len(bc.chain)-1].Hash()
+
+	return bc.proofOfWork(transactions, previousHash)
+}
+
+func (bc *Blockchain) proofOfWork(transactions []*Transaction, previousHash [32]byte) int {
 	nonce := 0
 	for !bc.ValidProof(nonce, previousHash, transactions, MINING_DIFFICULTY) {
 		nonce += 1
@@ -217,6 +226,13 @@ func (bc *Blockchain) RegisterNewWallet(blockchainAddress string, message string
 
 // CalculateTotalBalance calculates the total balance of crypto on the specific address in the Blockchain.
 func (bc *Blockchain) CalculateTotalBalance(blockchainAddress string) (float32, error) {
+	bc.mux.Lock()
+	defer bc.mux.Unlock()
+
+	return bc.calculateTotalBalanceLocked(blockchainAddress)
+}
+
+func (bc *Blockchain) calculateTotalBalanceLocked(blockchainAddress string) (float32, error) {
 	var totalBalance float32 = 0.0
 	addressFound := false
 

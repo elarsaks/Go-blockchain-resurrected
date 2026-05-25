@@ -1,7 +1,7 @@
 FROM node:20.10.0
 WORKDIR /app
-COPY package*.json ./
+COPY cmd/react_dashboard/package*.json ./
 RUN npm ci
-COPY . .
+COPY cmd/react_dashboard ./
 EXPOSE 3000
 CMD ["npm", "run", "start", "--", "--host", "0.0.0.0"]
