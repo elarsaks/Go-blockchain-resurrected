@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"io"
 	"log"
 	"net/http"
 
@@ -20,20 +19,20 @@ func (h *BlockchainServerHandler) Consensus(w http.ResponseWriter, req *http.Req
 		replaced := bc.ResolveConflicts()
 
 		// Set the response header to indicate JSON content
-		w.Header().Add("Content-Type", "application/json")
+		w.Header().Set("Content-Type", "application/json")
 
 		// If conflicts were resolved and the chain was replaced, return "success"
 		// Otherwise, return "fail"
 		if replaced {
-			io.WriteString(w, string(utils.JsonStatus("success")))
+			_, _ = w.Write(utils.JsonStatus("success"))
 		} else {
-			io.WriteString(w, string(utils.JsonStatus("fail")))
+			_, _ = w.Write(utils.JsonStatus("fail"))
 		}
 	default:
 		// Log an error if an unsupported HTTP method is used
 		log.Printf("ERROR: Invalid HTTP Method")
 
 		// Return a 400 Bad Request status to the client
-		w.WriteHeader(http.StatusBadRequest)
+		w.WriteHeader(http.StatusMethodNotAllowed)
 	}
 }

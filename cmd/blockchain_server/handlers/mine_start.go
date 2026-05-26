@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"io"
 	"log"
 	"net/http"
 
@@ -15,13 +14,13 @@ func (h *BlockchainServerHandler) StartMine(w http.ResponseWriter, req *http.Req
 	switch req.Method {
 	case http.MethodGet:
 		bc := h.server.GetBlockchain()
-		bc.StartMining()
+		bc.Mining()
 
 		m := utils.JsonStatus("success")
-		w.Header().Add("Content-Type", "application/json")
-		io.WriteString(w, string(m))
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(m)
 	default:
 		log.Println("ERROR: Invalid HTTP Method")
-		w.WriteHeader(http.StatusBadRequest)
+		w.WriteHeader(http.StatusMethodNotAllowed)
 	}
 }

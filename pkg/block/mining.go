@@ -1,6 +1,7 @@
 package block
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -17,7 +18,6 @@ import (
 func (bc *Blockchain) Mining() bool {
 	// Lock the blockchain while mining
 	bc.mux.Lock()
-	defer bc.mux.Unlock()
 
 	// Log out blockchain
 	// bc.Print() // TODO: Remove debug
@@ -25,6 +25,7 @@ func (bc *Blockchain) Mining() bool {
 	//* DEBUG #Consensus Wallet registration mining should be done some where else
 	// Don't mine when there is no transaction and blockchain already has few blocks
 	if len(bc.transactionPool) == 0 {
+		bc.mux.Unlock()
 		return false
 	}
 
@@ -33,6 +34,7 @@ func (bc *Blockchain) Mining() bool {
 
 	// If an error occurred adding the transaction, log the error and return false
 	if err != nil {
+		bc.mux.Unlock()
 		log.Printf("ERROR: %v", err)
 		return false
 	}
@@ -42,32 +44,23 @@ func (bc *Blockchain) Mining() bool {
 	previousHash := bc.chain[len(bc.chain)-1].Hash()
 	nonce := bc.proofOfWork(transactions, previousHash)
 	bc.createBlockLocked(nonce, previousHash, transactions)
+	bc.mux.Unlock()
 
 	// Log a successful mining operation
 	// #debug
 	log.Println("action=mining, status=success")
 
+	bc.clearNeighborTransactionPools()
+
 	// Send a consensus request to each neighbor
-	for _, n := range bc.neighbors {
+	for _, n := range bc.Neighbors() {
 
 		fmt.Println("Send consensus to neigbour ", n)
 
 		endpoint := peerEndpoint(n, "/consensus")
-		req, err := http.NewRequest("PUT", endpoint, nil)
-		if err != nil {
+		if err := doPeerRequest(http.MethodPut, endpoint, nil); err != nil {
 			log.Printf("ERROR: %v", err)
-			return false
 		}
-		resp, err := peerHTTPClient.Do(req)
-
-		// If an error occurred making the request, log the error
-		if err != nil {
-			log.Printf("ERROR: %v", err)
-			return false
-		}
-		_ = resp.Body.Close()
-
-		log.Printf("%v", resp)
 	}
 
 	// Return true indicating the mining operation was successful
@@ -75,10 +68,22 @@ func (bc *Blockchain) Mining() bool {
 }
 
 // StartMining initiates the mining process.
-func (bc *Blockchain) StartMining() {
+func (bc *Blockchain) StartMining(ctx context.Context) {
 	bc.Mining()
 	// Schedule the next mining operation to occur after MINING_TIMER_SEC seconds.
-	_ = time.AfterFunc(time.Second*MINING_TIMER_SEC, bc.StartMining)
+	go func() {
+		ticker := time.NewTicker(time.Second * MINING_TIMER_SEC)
+		defer ticker.Stop()
+
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				bc.Mining()
+			}
+		}
+	}()
 }
 
 // ValidProof validates the proof of work.
@@ -98,8 +103,8 @@ func (bc *Blockchain) ValidProof(nonce int, previousHash [32]byte, transactions 
 
 // ProofOfWork finds the proof of work.
 func (bc *Blockchain) ProofOfWork() int {
-	bc.mux.Lock()
-	defer bc.mux.Unlock()
+	bc.mux.RLock()
+	defer bc.mux.RUnlock()
 
 	transactions := bc.copyTransactionPoolLocked()
 	previousHash := bc.chain[len(bc.chain)-1].Hash()
@@ -117,6 +122,9 @@ func (bc *Blockchain) proofOfWork(transactions []*Transaction, previousHash [32]
 
 // ValidChain validates the chain.
 func (bc *Blockchain) ValidChain(chain []*Block) bool {
+	if len(chain) == 0 {
+		return false
+	}
 
 	//* DEGUG #Consensus
 	preBlock := chain[0]
@@ -141,10 +149,12 @@ func (bc *Blockchain) ValidChain(chain []*Block) bool {
 func (bc *Blockchain) ResolveConflicts() bool {
 	// Initialize variables to track the longest chain and its length
 	var longestChain []*Block = nil
+	bc.mux.RLock()
 	maxLength := len(bc.chain)
+	bc.mux.RUnlock()
 
 	// Iterate over the neighbors to fetch their chains
-	for _, n := range bc.neighbors {
+	for _, n := range bc.Neighbors() {
 		fmt.Println("Resolve conflict with ", n)
 
 		// Construct the endpoint URL to fetch the chain from the neighbor
@@ -191,7 +201,9 @@ func (bc *Blockchain) ResolveConflicts() bool {
 
 	// If a longer valid chain was found, replace the blockchain's chain with it
 	if longestChain != nil {
+		bc.mux.Lock()
 		bc.chain = longestChain
+		bc.mux.Unlock()
 		log.Printf("INFO: Resolved conflicts. Replaced blockchain with the longest valid chain.")
 		return true
 	}
@@ -218,7 +230,7 @@ func (bc *Blockchain) RegisterNewWallet(blockchainAddress string, message string
 	}
 
 	// Mine a new block when the wallet is registered successfully
-	bc.StartMining()
+	bc.Mining()
 
 	// Return true indicating the wallet was registered successfully
 	return true
@@ -226,8 +238,8 @@ func (bc *Blockchain) RegisterNewWallet(blockchainAddress string, message string
 
 // CalculateTotalBalance calculates the total balance of crypto on the specific address in the Blockchain.
 func (bc *Blockchain) CalculateTotalBalance(blockchainAddress string) (float32, error) {
-	bc.mux.Lock()
-	defer bc.mux.Unlock()
+	bc.mux.RLock()
+	defer bc.mux.RUnlock()
 
 	return bc.calculateTotalBalanceLocked(blockchainAddress)
 }
