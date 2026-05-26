@@ -77,3 +77,28 @@ Dashboard-only changes should also report:
 - `react-dashboard`
 
 The branch protection rule should require `go-quality` and `e2e-transfer` so package tests and full-stack behavior both matter before merge.
+
+## Planned Distributed-System Quality Gates
+
+When Kubernetes, Kafka, and monitoring are added, the test strategy should expand in phases instead of trying to validate the whole distributed system at once.
+
+Recommended new checks:
+
+| Check | Scope | Purpose |
+| --- | --- | --- |
+| Kubernetes manifest validation | `deploy/k8s` | Catch invalid YAML, missing selectors, and broken service references. |
+| Local cluster smoke test | Kubernetes runtime | Prove dashboard, wallet server, and miner pods start and respond. |
+| Kafka publish test | wallet, miner, Kafka | Prove successful transaction and mining events are published. |
+| Metrics smoke test | wallet, miner, Prometheus | Prove Prometheus can scrape expected metric names. |
+| Resilience test | Kubernetes runtime | Restart one miner pod and confirm the system recovers. |
+
+Quality gates should be added in this order:
+
+1. Keep current Go, React, and Docker e2e checks green.
+2. Add manifest linting before any cluster test.
+3. Add a short Kubernetes smoke test for HTTP flows.
+4. Add Kafka event assertions for transaction and block events.
+5. Add Prometheus scrape assertions for service health and blockchain metrics.
+6. Add slower resilience tests after the basic cluster path is stable.
+
+The first distributed CI version can run against kind. Longer resilience tests can run on a scheduled job if they make pull requests too slow.

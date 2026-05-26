@@ -163,3 +163,34 @@ Common symptoms:
 | Wallet server returns a miner error | The selected miner gateway may not be running or may not know the wallet address yet. |
 | Blocks endpoint returns decode errors | Miner block JSON and wallet-server block decoder disagree. Check block JSON tests. |
 | Docker e2e times out | Mining interval, container startup time, or peer consensus may have delayed the transfer. Check Docker logs. |
+
+## Planned Kubernetes Operations
+
+The distributed-system plan adds Kubernetes as the next runtime target while keeping Docker Compose as the fastest local feedback loop.
+
+Recommended local cluster options:
+
+- Docker Desktop Kubernetes
+- kind
+- minikube
+
+Planned operational flow:
+
+1. Build or publish container images for the dashboard, wallet server, and miner server.
+2. Apply the project namespace and ConfigMap.
+3. Deploy miners as a StatefulSet.
+4. Deploy the wallet server and dashboard as Deployments.
+5. Install Kafka through Helm or an operator.
+6. Install Prometheus and Grafana through Helm or an operator.
+7. Verify HTTP flows first, then verify Kafka events and metrics.
+
+Planned health checks:
+
+| Check | Component | Purpose |
+| --- | --- | --- |
+| Liveness probe | wallet, miner | Restart stuck processes. |
+| Readiness probe | wallet, miner | Route traffic only after the HTTP server is ready. |
+| Metrics scrape | wallet, miner, Kafka | Feed Prometheus and Grafana dashboards. |
+| Kafka topic check | Kafka | Confirm event topics exist before event-driven tests. |
+
+See [Distributed Systems Plan](distributed-systems-plan.md) for the full rollout.

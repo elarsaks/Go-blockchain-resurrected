@@ -11,6 +11,7 @@ The project is a learning-oriented blockchain application, not a production bloc
 - [Domain Logic](domain-logic.md): blocks, transactions, wallets, mining, consensus, and known limitations.
 - [Request Flows](request-flows.md): sequence diagrams for wallet creation, transactions, mining, balance reads, and block reads.
 - [Operations](operations.md): local run commands, quality checks, e2e flow, environment variables, and debugging notes.
+- [Distributed Systems Plan](distributed-systems-plan.md): phased plan for Kubernetes, Kafka event streaming, monitoring, and resilience.
 
 ## High-Level Shape
 
@@ -33,3 +34,14 @@ flowchart LR
 ```
 
 The browser does not talk to miners directly. It talks to the wallet server. The wallet server creates/signs wallet transactions and forwards blockchain operations to the miner requested by each API call. Miners own blockchain state, transaction pools, mining, and peer synchronization.
+
+## Distributed Direction
+
+The next architecture target is a Kubernetes-based version of the same system:
+
+- wallet server and dashboard as Deployments
+- miner nodes as a StatefulSet with stable identities
+- Kafka as an event backbone for blockchain activity
+- Prometheus and Grafana for health, latency, mining, consensus, and transaction-pool visibility
+
+See [Distributed Systems Plan](distributed-systems-plan.md) for the staged rollout.

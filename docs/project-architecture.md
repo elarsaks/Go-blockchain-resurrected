@@ -157,3 +157,22 @@ State is in memory only. Restarting containers resets wallets, transaction pools
 - Some package methods log or print directly rather than returning structured errors.
 - Peer synchronization is simple and assumes local Docker service names.
 - The blockchain is educational and should not be treated as production-grade cryptographic infrastructure.
+
+## Distributed Architecture Target
+
+The planned distributed version keeps the current learning scope, but moves runtime ownership into Kubernetes and adds an event/observability layer.
+
+Planned runtime ownership:
+
+| Component | Kubernetes shape | Notes |
+| --- | --- | --- |
+| React dashboard | Deployment + Service | Browser entrypoint, optionally exposed through Ingress. |
+| Wallet server | Deployment + Service | API gateway for dashboard commands and reads. |
+| Miner nodes | StatefulSet + headless Service | Stable miner identities for peer discovery and consensus demos. |
+| Kafka | Helm chart or operator-managed cluster | Event stream for transaction, block, and consensus activity. |
+| Prometheus | Helm chart or operator-managed deployment | Scrapes service and Kafka metrics. |
+| Grafana | Deployment or chart-managed service | Dashboards for chain height, mining, transaction pool, latency, and errors. |
+
+The first Kubernetes version should preserve existing HTTP behavior. Kafka should start as an event stream for auditability and monitoring instead of becoming the source of truth immediately. This keeps the migration small and makes each phase easier to test.
+
+See [Distributed Systems Plan](distributed-systems-plan.md) for rollout phases and open decisions.
