@@ -24,8 +24,9 @@ To run it directly via Golang, execute the following command from the repository
 PORT=5001 go run ./cmd/blockchain_server
 ```
 
+The miner keeps a stable wallet between restarts. Set `MINER_PRIVATE_KEY` to provide a private key directly, or set `MINER_PRIVATE_KEY_FILE` to choose where the generated key is stored.
+
 **Note:**  
 These commands run only one miner. If you want to run multiple miners, open multiple new terminals and run the same command with different port numbers.
 
 Feel free to adjust the port numbers as needed to run multiple miners concurrently.
-

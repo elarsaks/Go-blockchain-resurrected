@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"io"
 	"log"
 	"net/http"
 
@@ -29,10 +28,10 @@ func (h *BlockchainServerHandler) Balance(w http.ResponseWriter, req *http.Reque
 		m, _ := json.Marshal(br)
 
 		w.Header().Set("Content-Type", "application/json")
-		io.WriteString(w, string(m))
+		_, _ = w.Write(m)
 
 	default:
 		log.Printf("ERROR: Invalid HTTP Method")
-		w.WriteHeader(http.StatusBadRequest)
+		w.WriteHeader(http.StatusMethodNotAllowed)
 	}
 }

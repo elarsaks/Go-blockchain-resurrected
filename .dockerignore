@@ -3,6 +3,8 @@
 docs
 cmd/react_dashboard/node_modules
 cmd/react_dashboard/build
+cmd/react_dashboard/coverage
+cmd/react_dashboard/dist
 cmd/react_dashboard/keys
 **/tmp
 **/*.log

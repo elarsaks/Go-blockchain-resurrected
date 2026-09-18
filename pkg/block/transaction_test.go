@@ -51,6 +51,55 @@ func TestAddTransactionMapsFields(t *testing.T) {
 	}
 }
 
+func TestAddTransactionRejectsNegativeSystemValue(t *testing.T) {
+	bc := NewBlockchain("miner", 5001)
+
+	ok, err := bc.AddTransaction(MINING_SENDER, "recipient", "reward", -1, nil, nil)
+	if err == nil {
+		t.Fatal("expected AddTransaction to reject negative system value")
+	}
+	if ok {
+		t.Fatal("AddTransaction returned true for negative system value")
+	}
+	if got := len(bc.TransactionPool()); got != 0 {
+		t.Fatalf("transaction pool length = %d, want 0", got)
+	}
+}
+
+func TestTransactionRequestValidateRejectsEmptyAndInvalidValues(t *testing.T) {
+	message := ""
+	recipient := "recipient"
+	sender := "sender"
+	publicKey := "public-key"
+	signature := "signature"
+	value := float32(1)
+
+	request := &TransactionRequest{
+		Message:                    &message,
+		RecipientBlockchainAddress: &recipient,
+		SenderBlockchainAddress:    &sender,
+		SenderPublicKey:            &publicKey,
+		Signature:                  &signature,
+		Value:                      &value,
+	}
+
+	if request.Validate() {
+		t.Fatal("expected empty message to be invalid")
+	}
+
+	message = "payment"
+	value = 0
+	if request.Validate() {
+		t.Fatal("expected zero value to be invalid")
+	}
+
+	value = 1
+	recipient = sender
+	if request.Validate() {
+		t.Fatal("expected self-transfer to be invalid")
+	}
+}
+
 func TestVerifyTransactionSignatureAcceptsWalletSignature(t *testing.T) {
 	senderWallet, err := walletpkg.NewWalletWithError()
 	if err != nil {

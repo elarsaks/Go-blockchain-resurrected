@@ -51,6 +51,34 @@ func TestNewWalletWithErrorCreatesWallet(t *testing.T) {
 	}
 }
 
+func TestNewWalletFromPrivateKeyHexRestoresWalletIdentity(t *testing.T) {
+	original, err := NewWalletWithError()
+	if err != nil {
+		t.Fatalf("NewWalletWithError returned error: %v", err)
+	}
+
+	restored, err := NewWalletFromPrivateKeyHex(original.PrivateKeyStr())
+	if err != nil {
+		t.Fatalf("NewWalletFromPrivateKeyHex returned error: %v", err)
+	}
+
+	if restored.PrivateKeyStr() != original.PrivateKeyStr() {
+		t.Fatalf("private key = %q, want %q", restored.PrivateKeyStr(), original.PrivateKeyStr())
+	}
+	if restored.PublicKeyStr() != original.PublicKeyStr() {
+		t.Fatalf("public key = %q, want %q", restored.PublicKeyStr(), original.PublicKeyStr())
+	}
+	if restored.BlockchainAddress() != original.BlockchainAddress() {
+		t.Fatalf("blockchain address = %q, want %q", restored.BlockchainAddress(), original.BlockchainAddress())
+	}
+}
+
+func TestNewWalletFromPrivateKeyHexRejectsInvalidInput(t *testing.T) {
+	if restored, err := NewWalletFromPrivateKeyHex("not-hex"); err == nil {
+		t.Fatalf("NewWalletFromPrivateKeyHex returned wallet %#v, want error", restored)
+	}
+}
+
 func TestGenerateSignatureWithErrorRejectsMissingPrivateKey(t *testing.T) {
 	transaction := NewTransaction("hello", "recipient", "sender", nil, nil, 2)
 

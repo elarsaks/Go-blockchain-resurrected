@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"net/http"
 	"strings"
 
 	"github.com/elarsaks/Go-blockchain/pkg/utils"
@@ -44,14 +43,48 @@ func (bc *Blockchain) AddTransaction(sender string,
 	value float32,
 	senderPublicKey *ecdsa.PublicKey,
 	s *utils.Signature) (bool, error) {
+	bc.mux.Lock()
+	defer bc.mux.Unlock()
+
+	return bc.addTransactionLocked(sender, recipient, message, value, senderPublicKey, s)
+}
+
+func (bc *Blockchain) addTransactionLocked(sender string,
+	recipient string,
+	message string,
+	value float32,
+	senderPublicKey *ecdsa.PublicKey,
+	s *utils.Signature) (bool, error) {
+	if strings.TrimSpace(sender) == "" {
+		return false, fmt.Errorf("ERROR: sender blockchain address is required")
+	}
+	if strings.TrimSpace(recipient) == "" {
+		return false, fmt.Errorf("ERROR: recipient blockchain address is required")
+	}
+	if strings.TrimSpace(message) == "" {
+		return false, fmt.Errorf("ERROR: transaction message is required")
+	}
+	if sender != MINING_SENDER && value <= 0 {
+		return false, fmt.Errorf("ERROR: transaction value must be positive")
+	}
+	if sender != MINING_SENDER && sender == recipient {
+		return false, fmt.Errorf("ERROR: sender and recipient must be different")
+	}
 
 	// Create a new transaction
 	t := NewTransaction(sender, recipient, message, value)
 
 	// If the sender is the mining address, add the transaction to the pool and return true
 	if sender == MINING_SENDER {
+		if value < 0 {
+			return false, fmt.Errorf("ERROR: system transaction value must not be negative")
+		}
 		bc.transactionPool = append(bc.transactionPool, t)
 		return true, nil
+	}
+
+	if senderPublicKey == nil || s == nil {
+		return false, fmt.Errorf("ERROR: sender public key and signature are required")
 	}
 
 	// If the transaction signature is not verified, return false and an error
@@ -60,7 +93,7 @@ func (bc *Blockchain) AddTransaction(sender string,
 	}
 
 	// Calculate the total balance of the sender
-	balance, err := bc.CalculateTotalBalance(sender)
+	balance, err := bc.calculateTotalBalanceLocked(sender)
 	if err != nil {
 		// If there is an error calculating the balance, return false and the error
 		return false, fmt.Errorf("ERROR: CalculateTotalAmount: %v", err)
@@ -80,6 +113,9 @@ func (bc *Blockchain) AddTransaction(sender string,
 
 // Empty the transaction pool the Blockchain
 func (bc *Blockchain) ClearTransactionPool() {
+	bc.mux.Lock()
+	defer bc.mux.Unlock()
+
 	bc.transactionPool = bc.transactionPool[:0]
 }
 
@@ -99,7 +135,7 @@ func (bc *Blockchain) CreateTransaction(sender string, recipient string, message
 	// If the transaction was added successfully, broadcast it to the network
 	if isTransacted {
 		// Reverse engineer this part of the code
-		for _, n := range bc.neighbors {
+		for _, n := range bc.Neighbors() {
 			publicKeyStr := fmt.Sprintf("%064x%064x", senderPublicKey.X.Bytes(),
 				senderPublicKey.Y.Bytes())
 			signatureStr := s.String()
@@ -116,20 +152,11 @@ func (bc *Blockchain) CreateTransaction(sender string, recipient string, message
 				log.Printf("ERROR: %v", err)
 				return false, err
 			}
-			buf := bytes.NewBuffer(m)
 			endpoint := peerEndpoint(n, "/transactions")
-			req, err := http.NewRequest("PUT", endpoint, buf)
-			if err != nil {
+			if err := doPeerRequest("PUT", endpoint, bytes.NewReader(m)); err != nil {
 				log.Printf("ERROR: %v", err)
-				return false, err
+				continue
 			}
-			resp, err := peerHTTPClient.Do(req)
-			if err != nil {
-				log.Printf("ERROR: %v", err)
-				return false, err
-			}
-			_ = resp.Body.Close()
-			log.Printf("%v", resp)
 		}
 	}
 
@@ -138,6 +165,13 @@ func (bc *Blockchain) CreateTransaction(sender string, recipient string, message
 
 // Copy the transaction pool
 func (bc *Blockchain) CopyTransactionPool() []*Transaction {
+	bc.mux.RLock()
+	defer bc.mux.RUnlock()
+
+	return bc.copyTransactionPoolLocked()
+}
+
+func (bc *Blockchain) copyTransactionPoolLocked() []*Transaction {
 	transactions := make([]*Transaction, 0, len(bc.transactionPool))
 	for _, t := range bc.transactionPool {
 		transactions = append(transactions,
@@ -157,6 +191,9 @@ func NewTransaction(sender string, recipient string, message string, value float
 
 // Get the transaction pool the Blockchain
 func (bc *Blockchain) TransactionPool() []*Transaction {
+	bc.mux.RLock()
+	defer bc.mux.RUnlock()
+
 	return append([]*Transaction(nil), bc.transactionPool...)
 }
 
@@ -170,7 +207,13 @@ func (tr *TransactionRequest) Validate() bool {
 		tr.Signature == nil {
 		return false
 	}
-	return true
+	return strings.TrimSpace(*tr.SenderBlockchainAddress) != "" &&
+		strings.TrimSpace(*tr.RecipientBlockchainAddress) != "" &&
+		strings.TrimSpace(*tr.SenderPublicKey) != "" &&
+		strings.TrimSpace(*tr.Message) != "" &&
+		strings.TrimSpace(*tr.Signature) != "" &&
+		*tr.Value > 0 &&
+		*tr.SenderBlockchainAddress != *tr.RecipientBlockchainAddress
 }
 
 // Verify the signature of the transaction
@@ -178,6 +221,10 @@ func (bc *Blockchain) VerifyTransactionSignature(
 	senderPublicKey *ecdsa.PublicKey,
 	s *utils.Signature,
 	t *Transaction) bool {
+	if senderPublicKey == nil || senderPublicKey.X == nil || senderPublicKey.Y == nil ||
+		s == nil || s.R == nil || s.S == nil {
+		return false
+	}
 
 	m, _ := json.Marshal(t)
 
@@ -244,6 +291,9 @@ func (t *Transaction) UnmarshalJSON(data []byte) error {
 	}
 	if v.Value == nil {
 		return fmt.Errorf("transaction value is required")
+	}
+	if *v.Value < 0 {
+		return fmt.Errorf("transaction value must not be negative")
 	}
 	t.message = *v.Message
 	t.recipientBlockchainAddress = *v.Recipient

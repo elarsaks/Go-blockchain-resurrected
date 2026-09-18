@@ -1,6 +1,7 @@
 package block
 
 import (
+	"context"
 	"os"
 	"strconv"
 	"strings"
@@ -53,8 +54,29 @@ func (bc *Blockchain) SyncNeighbors() {
 	bc.SetNeighbors()
 }
 
+// Neighbors returns a snapshot of the currently known peer nodes.
+func (bc *Blockchain) Neighbors() []string {
+	bc.muxNeighbors.Lock()
+	defer bc.muxNeighbors.Unlock()
+
+	return append([]string(nil), bc.neighbors...)
+}
+
 // StartSyncNeighbors initiates the synchronization process and schedules it to run periodically.
-func (bc *Blockchain) StartSyncNeighbors() {
+func (bc *Blockchain) StartSyncNeighbors(ctx context.Context) {
 	bc.SyncNeighbors()
-	_ = time.AfterFunc(time.Second*BLOCKCHAIN_NEIGHBOR_SYNC_TIME_SEC, bc.StartSyncNeighbors)
+
+	go func() {
+		ticker := time.NewTicker(time.Second * BLOCKCHAIN_NEIGHBOR_SYNC_TIME_SEC)
+		defer ticker.Stop()
+
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				bc.SyncNeighbors()
+			}
+		}
+	}()
 }

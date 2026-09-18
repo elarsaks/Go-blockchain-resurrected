@@ -5,9 +5,12 @@ import (
 	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"log"
+	"math/big"
+	"strings"
 
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/elarsaks/Go-blockchain/pkg/utils"
@@ -56,10 +59,53 @@ func NewWalletWithError() (*Wallet, error) {
 	}
 	w.privateKey = privateKey
 	w.publicKey = &w.privateKey.PublicKey
+	w.blockchainAddress = blockchainAddressFromPublicKey(w.publicKey)
+	return w, nil
+}
+
+func NewWalletFromPrivateKeyHex(privateKeyHex string) (*Wallet, error) {
+	privateKeyHex = strings.TrimSpace(privateKeyHex)
+	if privateKeyHex == "" {
+		return nil, fmt.Errorf("private key is required")
+	}
+	if len(privateKeyHex)%2 != 0 {
+		privateKeyHex = "0" + privateKeyHex
+	}
+
+	privateKeyBytes, err := hex.DecodeString(privateKeyHex)
+	if err != nil {
+		return nil, fmt.Errorf("decode private key: %w", err)
+	}
+
+	curve := elliptic.P256()
+	d := new(big.Int).SetBytes(privateKeyBytes)
+	if d.Sign() <= 0 || d.Cmp(curve.Params().N) >= 0 {
+		return nil, fmt.Errorf("private key is outside P-256 range")
+	}
+
+	x, y := curve.ScalarBaseMult(d.Bytes())
+	if x == nil || y == nil {
+		return nil, fmt.Errorf("derive public key from private key")
+	}
+
+	privateKey := &ecdsa.PrivateKey{
+		PublicKey: ecdsa.PublicKey{Curve: curve, X: x, Y: y},
+		D:         d,
+	}
+
+	w := &Wallet{
+		privateKey: privateKey,
+		publicKey:  &privateKey.PublicKey,
+	}
+	w.blockchainAddress = blockchainAddressFromPublicKey(w.publicKey)
+	return w, nil
+}
+
+func blockchainAddressFromPublicKey(publicKey *ecdsa.PublicKey) string {
 	// 2. Perform SHA-256 hashing on the public key (32 bytes).
 	h2 := sha256.New()
-	h2.Write(w.publicKey.X.Bytes())
-	h2.Write(w.publicKey.Y.Bytes())
+	h2.Write(publicKey.X.Bytes())
+	h2.Write(publicKey.Y.Bytes())
 	digest2 := h2.Sum(nil)
 	// 3. Perform RIPEMD-160 hashing on the result of SHA-256 (20 bytes).
 	h3 := ripemd160.New()
@@ -84,9 +130,7 @@ func NewWalletWithError() (*Wallet, error) {
 	copy(dc8[:21], vd4[:])
 	copy(dc8[21:], chsum[:])
 	// 9. Convert the result from a byte string into base58.
-	address := base58.Encode(dc8)
-	w.blockchainAddress = address
-	return w, nil
+	return base58.Encode(dc8)
 }
 
 // PrivateKey returns the ECDSA private key of the wallet.

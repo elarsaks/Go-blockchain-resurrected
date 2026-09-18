@@ -1,8 +1,8 @@
 package handlers
 
 import (
+	"encoding/hex"
 	"encoding/json"
-	"io"
 	"log"
 	"net/http"
 
@@ -11,37 +11,46 @@ import (
 )
 
 func (h *BlockchainServerHandler) HandleGetTransaction(w http.ResponseWriter, req *http.Request) {
-	w.Header().Add("Content-Type", "application/json")
+	w.Header().Set("Content-Type", "application/json")
 
 	bc := h.server.GetBlockchain()
 
 	transactions := bc.TransactionPool()
 
-	m, _ := json.Marshal(struct {
+	_ = json.NewEncoder(w).Encode(struct {
 		Transactions []*block.Transaction `json:"transactions"`
 		Length       int                  `json:"length"`
 	}{
 		Transactions: transactions,
 		Length:       len(transactions),
 	})
-
-	io.WriteString(w, string(m[:]))
 }
 
 func (h *BlockchainServerHandler) HandlePostTransaction(w http.ResponseWriter, req *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
 	decoder := json.NewDecoder(req.Body)
 	var t block.TransactionRequest
 	err := decoder.Decode(&t)
 
 	if err != nil {
 		log.Printf("ERROR: %v", err)
-		io.WriteString(w, string(utils.JsonStatus("fail")))
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write(utils.JsonStatus("fail"))
 		return
 	}
 
 	if !t.Validate() {
 		log.Println("ERROR: missing field(s)")
-		io.WriteString(w, string(utils.JsonStatus("fail")))
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write(utils.JsonStatus("fail"))
+		return
+	}
+
+	if !isHexString(*t.SenderPublicKey, 128) || !isHexString(*t.Signature, 128) {
+		log.Println("ERROR: malformed public key or signature")
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write(utils.JsonStatus("fail"))
 		return
 	}
 
@@ -52,8 +61,6 @@ func (h *BlockchainServerHandler) HandlePostTransaction(w http.ResponseWriter, r
 
 	isCreated, err := bc.CreateTransaction(*t.SenderBlockchainAddress,
 		*t.RecipientBlockchainAddress, *t.Message, *t.Value, publicKey, signature)
-
-	w.Header().Add("Content-Type", "application/json")
 
 	var m []byte
 	if err != nil {
@@ -75,23 +82,34 @@ func (h *BlockchainServerHandler) HandlePostTransaction(w http.ResponseWriter, r
 		m = utils.JsonStatus("success")
 	}
 
-	io.WriteString(w, string(m))
+	_, _ = w.Write(m)
 }
 
 func (h *BlockchainServerHandler) HandlePutTransaction(w http.ResponseWriter, req *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
 	decoder := json.NewDecoder(req.Body)
 	var t block.TransactionRequest
 	err := decoder.Decode(&t)
 
 	if err != nil {
 		log.Printf("ERROR: %v", err)
-		io.WriteString(w, string(utils.JsonStatus("fail")))
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write(utils.JsonStatus("fail"))
 		return
 	}
 
 	if !t.Validate() {
 		log.Println("ERROR: missing field(s)")
-		io.WriteString(w, string(utils.JsonStatus("fail")))
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write(utils.JsonStatus("fail"))
+		return
+	}
+
+	if !isHexString(*t.SenderPublicKey, 128) || !isHexString(*t.Signature, 128) {
+		log.Println("ERROR: malformed public key or signature")
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write(utils.JsonStatus("fail"))
 		return
 	}
 
@@ -109,12 +127,9 @@ func (h *BlockchainServerHandler) HandlePutTransaction(w http.ResponseWriter, re
 
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(map[string]string{"status": "fail", "error": err.Error()})
-	} else {
-		json.NewEncoder(w).Encode(map[string]string{"status": "success"})
+		_ = json.NewEncoder(w).Encode(map[string]string{"status": "fail", "error": err.Error()})
+		return
 	}
-
-	w.Header().Add("Content-Type", "application/json")
 
 	var m []byte
 	if !isUpdated {
@@ -124,15 +139,17 @@ func (h *BlockchainServerHandler) HandlePutTransaction(w http.ResponseWriter, re
 		m = utils.JsonStatus("success")
 	}
 
-	io.WriteString(w, string(m))
+	_, _ = w.Write(m)
 }
 
 func (h *BlockchainServerHandler) HandleDeleteTransaction(w http.ResponseWriter, req *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
 	bc := h.server.GetBlockchain()
 
 	bc.ClearTransactionPool()
 
-	io.WriteString(w, string(utils.JsonStatus("success")))
+	_, _ = w.Write(utils.JsonStatus("success"))
 }
 
 func (h *BlockchainServerHandler) Transactions(w http.ResponseWriter, req *http.Request) {
@@ -147,6 +164,14 @@ func (h *BlockchainServerHandler) Transactions(w http.ResponseWriter, req *http.
 		h.HandleDeleteTransaction(w, req)
 	default:
 		log.Println("ERROR: Invalid HTTP Method")
-		w.WriteHeader(http.StatusBadRequest)
+		w.WriteHeader(http.StatusMethodNotAllowed)
 	}
+}
+
+func isHexString(s string, expectedLength int) bool {
+	if len(s) != expectedLength {
+		return false
+	}
+	_, err := hex.DecodeString(s)
+	return err == nil
 }

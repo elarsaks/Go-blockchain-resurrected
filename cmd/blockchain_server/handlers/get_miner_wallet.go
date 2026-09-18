@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"io"
 	"log"
 	"net/http"
 )
@@ -10,12 +9,12 @@ import (
 func (h *BlockchainServerHandler) MinerWallet(w http.ResponseWriter, req *http.Request) {
 	switch req.Method {
 	case http.MethodPost:
-		w.Header().Add("Content-Type", "application/json")
+		w.Header().Set("Content-Type", "application/json")
 		myWallet := h.server.GetWallet()
 		m, _ := myWallet.MarshalJSON()
-		io.WriteString(w, string(m[:]))
+		_, _ = w.Write(m)
 	default:
-		w.WriteHeader(http.StatusBadRequest)
+		w.WriteHeader(http.StatusMethodNotAllowed)
 		log.Println("ERROR: Invalid HTTP Method")
 	}
 }

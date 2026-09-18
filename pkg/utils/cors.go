@@ -9,10 +9,10 @@ import (
 func CorsMiddleware() mux.MiddlewareFunc {
 
 	corsOptions := cors.Options{
-		AllowedOrigins:   []string{"*"},                      // Allow requests from any origin
-		AllowedMethods:   []string{"GET", "POST", "OPTIONS"}, // Allow browser preflight
+		AllowedOrigins:   []string{"*"},                                       // Allow requests from any origin
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}, // Allow browser preflight
 		AllowedHeaders:   []string{"Content-Type"},
-		AllowCredentials: true, // Allow sending of credentials (cookies, headers)
+		AllowCredentials: false,
 	}
 
 	return cors.New(corsOptions).Handler
