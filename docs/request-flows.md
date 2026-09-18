@@ -139,3 +139,48 @@ sequenceDiagram
 ```
 
 The dashboard uses this flow to render recent blockchain activity.
+
+## Planned Kubernetes Startup
+
+```mermaid
+sequenceDiagram
+    participant K8s as Kubernetes
+    participant W as wallet-server Deployment
+    participant M as miner StatefulSet
+    participant K as Kafka
+    participant P as Prometheus
+
+    K8s->>K: Start Kafka broker(s)
+    K8s->>M: Start miner-0, miner-1, miner-2
+    K8s->>W: Start wallet-server
+    M->>M: Create or restore blockchain state
+    M->>M: Discover peer miner DNS names
+    W->>K: Publish service startup event
+    M->>K: Publish miner startup event
+    P->>W: Scrape metrics endpoint
+    P->>M: Scrape metrics endpoints
+```
+
+In the first distributed version, Kubernetes changes service discovery and runtime management, but the user-facing command path can stay HTTP-based.
+
+## Planned Event Publishing
+
+```mermaid
+sequenceDiagram
+    participant UI as React Dashboard
+    participant W as Wallet Server
+    participant M as Selected Miner
+    participant K as Kafka
+    participant G as Grafana / Consumers
+
+    UI->>W: POST /transaction
+    W->>M: POST /transactions
+    M->>M: Validate and add to transaction pool
+    M->>K: Publish transactions.accepted
+    M-->>W: Created
+    W->>K: Publish transactions.created
+    W-->>UI: Success JSON
+    G->>K: Consume event stream or read derived metrics
+```
+
+Kafka should initially describe successful state changes. It should not replace transaction validation, mining, or consensus until the current behavior is stable in Kubernetes.
